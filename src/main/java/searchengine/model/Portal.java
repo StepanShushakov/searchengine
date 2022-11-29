@@ -4,18 +4,19 @@ import org.attoparser.dom.Text;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "site")
 public class Portal {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(nullable = false)
     private int id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(columnDefinition = "enum", nullable = false)
     private IndexStatus status;
 
     @Column(name = "status_time", nullable = false)
@@ -29,6 +30,12 @@ public class Portal {
 
     @Column(nullable = false)
     private String name;
+
+    @OneToMany(mappedBy = "portal")
+    private List<Page> pages;
+
+    @OneToMany(mappedBy = "portal")
+    private List<Lemma> lemmas;
 
     public int getId() {
         return id;
