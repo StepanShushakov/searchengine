@@ -10,12 +10,12 @@ public class Index {
     @Column(nullable = false)
     private int id;
 
-//    @JoinColumn(name = "page_id", nullable = false)
+//    @OneToOne(fetch = FetchType.LAZY)
 //    private Page page;
 //
-//    @JoinColumn(name = "lemma_id", nullable = false)
+//    @OneToOne(fetch = FetchType.LAZY)
 //    private Lemma lemma;
 
-    @Column(nullable = false)
+    @Column(name = "lemma_rank", nullable = false)
     private float rank;
 }

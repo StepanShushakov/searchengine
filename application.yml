@@ -13,6 +13,9 @@ spring:
     hibernate:
       ddl-auto: update
       show-sql: true
+  liquibase:
+    enabled: true
+    change-log: classpath:/static/assets/db/changelog/db.changelog-master.xml
 
 indexing-settings:
   sites:
