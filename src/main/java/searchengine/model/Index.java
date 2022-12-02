@@ -3,7 +3,7 @@ package searchengine.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "indexT")
+@Table(name = "`index`")
 public class Index {
 
     @Id
@@ -17,6 +17,6 @@ public class Index {
     @OneToOne(fetch = FetchType.LAZY)
     private Lemma lemma;
 
-    @Column(name = "rankT", nullable = false)
+    @Column(name = "`rank`", nullable = false)
     private float rank;
 }

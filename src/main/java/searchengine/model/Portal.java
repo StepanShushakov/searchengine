@@ -16,7 +16,7 @@ public class Portal {
     private int id;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "enum", nullable = false)
+    @Column(columnDefinition = "enum('INDEXING', 'INDEXED', 'FAILED')", nullable = false)
     private IndexStatus status;
 
     @Column(name = "status_time", nullable = false)
