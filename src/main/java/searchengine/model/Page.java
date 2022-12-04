@@ -4,9 +4,8 @@ import javax.persistence.*;
 import javax.persistence.Index;
 
 @Entity
-@Table(indexes = @Index(columnList = "path"))
+@Table(indexes = @Index(name="index_path", columnList = "path"))
 public class Page {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
