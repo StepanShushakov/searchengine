@@ -12,9 +12,11 @@ public class Index {
     private int id;
 
     @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private Page page;
 
     @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private Lemma lemma;
 
     @Column(name = "`rank`", nullable = false)
