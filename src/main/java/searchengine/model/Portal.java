@@ -3,7 +3,7 @@ package searchengine.model;
 import org.attoparser.dom.Text;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -20,7 +20,7 @@ public class Portal {
     private IndexStatus status;
 
     @Column(name = "status_time", nullable = false)
-    private LocalDateTime statusTime;
+    private Date statusTime;
 
     @Column(name = "last_error")
     private Text lastError;
@@ -31,10 +31,10 @@ public class Portal {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "portal")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "portal")
     private List<Page> pages;
 
-    @OneToMany(mappedBy = "portal")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "portal")
     private List<Lemma> lemmas;
 
     public int getId() {
@@ -53,11 +53,11 @@ public class Portal {
         this.status = status;
     }
 
-    public LocalDateTime getStatusTime() {
+    public Date getStatusTime() {
         return statusTime;
     }
 
-    public void setStatusTime(LocalDateTime statusTime) {
+    public void setStatusTime(Date statusTime) {
         this.statusTime = statusTime;
     }
 
