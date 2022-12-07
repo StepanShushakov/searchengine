@@ -7,7 +7,8 @@
    http://www.liquibase.org/xml/ns/dbchangelog
    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
 
-    <include file="static/assets/db/changelog/liquibase-outputChangeLog_init.xml"/>
-    <include file="static/assets/db/changelog/liquibase-outputChangeLog_indexPathAdd.xml"/>
+    <include file="static/assets/db/changelog/init.xml"/>
+    <include file="static/assets/db/changelog/indexPathAdding.xml"/>
+    <include file="static/assets/db/changelog/charsetOfContentModify.xml"/>
 
 </databaseChangeLog>
