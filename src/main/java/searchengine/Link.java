@@ -20,12 +20,8 @@ public class Link {
     private String host;
     private PortalRepository portalRepository;
     private PageRepository pageRepository;
+    private ConnectionPerformance connectionPerformance;
     private ArrayList<String> childrenLinks = new ArrayList<>();
-
-    @Value("${jsoupFakePerformance.userAgent}")
-    private String userAgent;
-    @Value("${jsoupFakePerformance.referrer}")
-    private String referrer;
 
     private static int rnd(int min, int max){
         max -= min;
@@ -37,7 +33,8 @@ public class Link {
                 Page page,
                 Portal portal,
                 PortalRepository portalRepository,
-                PageRepository pageRepository) {
+                PageRepository pageRepository,
+                ConnectionPerformance connectionPerformance) {
         try {
             Thread.sleep(rnd(500, 5000));
         } catch (InterruptedException e) {
@@ -48,11 +45,12 @@ public class Link {
         this.host = host;
         this.portalRepository = portalRepository;
         this.pageRepository = pageRepository;
+        this.connectionPerformance = connectionPerformance;
         Document doc = null;
         try {
             doc = Jsoup.connect(url)
-                    .userAgent(userAgent)
-                    .referrer(referrer)
+                    .userAgent(connectionPerformance.getUserAgent())
+                    .referrer(connectionPerformance.getReferrer())
                     .get();
             page.setCode(doc.connection().response().statusCode());
         } catch (IOException e) {

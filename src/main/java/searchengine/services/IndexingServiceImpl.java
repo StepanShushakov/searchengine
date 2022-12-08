@@ -3,7 +3,9 @@ package searchengine.services;
 import liquibase.pro.packaged.A;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import searchengine.ConnectionPerformance;
 import searchengine.SiteLinker;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
@@ -28,6 +30,11 @@ public class IndexingServiceImpl implements IndexingService{
     @Autowired
     private PageRepository pageRepository;
 
+    @Value("${jsoupFakePerformance.userAgent}")
+    private String userAgent;
+    @Value("${jsoupFakePerformance.referrer}")
+    private String referrer;
+
     @Override
     public IndexingResponse startIndexing() {
         sites.getSites().forEach(site -> {
@@ -48,7 +55,8 @@ public class IndexingServiceImpl implements IndexingService{
                         ,new URL(portalLink).getHost().replaceAll("^www.", "")
                         ,newPortal
                         ,portalRepository
-                        ,pageRepository));
+                        ,pageRepository
+                        ,new ConnectionPerformance(userAgent, referrer)));
             } catch (MalformedURLException e) {
 //                throw new RuntimeException(e);
                 newPortal.setStatusTime(new Date());

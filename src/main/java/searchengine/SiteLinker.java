@@ -19,20 +19,23 @@ public class SiteLinker extends RecursiveAction {
     private Link link;
     private PortalRepository portalRepository;
     private PageRepository pageRepository;
+    private ConnectionPerformance connectionPerformance;
 
     public SiteLinker(String url,
                       String host,
                       Portal portal,
                       PortalRepository portalRepository,
-                      PageRepository pageRepository) {
+                      PageRepository pageRepository,
+                      ConnectionPerformance connectionPerformance) {
         this.url = url;
         this.host = host;
         this.portal = portal;
         this.portalRepository = portalRepository;
         this.pageRepository = pageRepository;
+        this.connectionPerformance = connectionPerformance;
         Page page = new Page();
         page.setPortal(portal);
-        this.link = new Link(url, host, page, portal, portalRepository, pageRepository);
+        this.link = new Link(url, host, page, portal, portalRepository, pageRepository, connectionPerformance);
     }
 
     @Override
@@ -49,7 +52,8 @@ public class SiteLinker extends RecursiveAction {
                     ,this.host
                     ,this.portal
                     ,this.portalRepository
-                    ,this.pageRepository);
+                    ,this.pageRepository
+                    ,this.connectionPerformance);
             task.fork();
             taskList.add(task);
         }

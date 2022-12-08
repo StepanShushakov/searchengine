@@ -40,10 +40,10 @@
             <column name="code" type="INT">
                 <constraints nullable="false"/>
             </column>
-            <column name="content" type="MEDIUMTEXT">
+            <column name="content" type="MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci">
                 <constraints nullable="false"/>
             </column>
-            <column name="path" type="TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci">
+            <column name="path" type="TEXT">
                 <constraints nullable="false"/>
             </column>
             <column name="site_id" type="INT">
