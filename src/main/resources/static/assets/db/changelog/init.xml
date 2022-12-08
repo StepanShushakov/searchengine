@@ -43,7 +43,7 @@
             <column name="content" type="MEDIUMTEXT">
                 <constraints nullable="false"/>
             </column>
-            <column name="path" type="TEXT">
+            <column name="path" type="TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci">
                 <constraints nullable="false"/>
             </column>
             <column name="site_id" type="INT">

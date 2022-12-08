@@ -10,9 +10,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
+import java.util.logging.Logger;
 
 public class SiteLinker extends RecursiveAction {
-//    private JpaService jpaService = new JpaService();
     private String url;
     private String host;
     private Portal portal;
@@ -37,6 +37,9 @@ public class SiteLinker extends RecursiveAction {
 
     @Override
     protected void compute() {
+        Logger.getLogger(SiteLinker.class.getName())
+                .info("Compute method. Thread: " + Thread.currentThread().getName()
+                        + "\nurl: " + this.url);
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (int i = 0; i < childrenLinks.size(); i++) {
@@ -51,6 +54,8 @@ public class SiteLinker extends RecursiveAction {
             taskList.add(task);
         }
         for (SiteLinker task : taskList) {
+            Logger.getLogger(SiteLinker.class.getName())
+                    .info("join Thread: " + Thread.currentThread().getName());
             task.join();
         }
     }
@@ -65,6 +70,6 @@ public class SiteLinker extends RecursiveAction {
             // что страница уже добавлена,
             // что бы не пытаться её разбирать
         }
-        return pageRepository.findByPortalAndPath(this.portal, path) != null;
+        return pageRepository.findByPortalAndPath(this.portal, path).size() != 0;
     }
 }

@@ -3,6 +3,7 @@ package searchengine;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Value;
 import searchengine.model.Page;
 import searchengine.model.PageRepository;
 import searchengine.model.Portal;
@@ -20,6 +21,11 @@ public class Link {
     private PortalRepository portalRepository;
     private PageRepository pageRepository;
     private ArrayList<String> childrenLinks = new ArrayList<>();
+
+    @Value("${jsoupFakePerformance.userAgent}")
+    private String userAgent;
+    @Value("${jsoupFakePerformance.referrer}")
+    private String referrer;
 
     private static int rnd(int min, int max){
         max -= min;
@@ -45,15 +51,14 @@ public class Link {
         Document doc = null;
         try {
             doc = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
-                    .referrer("http://www.google.com")
+                    .userAgent(userAgent)
+                    .referrer(referrer)
                     .get();
             page.setCode(doc.connection().response().statusCode());
         } catch (IOException e) {
             //throw new RuntimeException(e);
         }
         if (doc == null) {
-            savePage(page, portal);
             return;
         }
         page.setContent(doc.toString());
