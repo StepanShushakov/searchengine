@@ -38,6 +38,7 @@ public class IndexingServiceImpl implements IndexingService{
 
     @Override
     public IndexingResponse startIndexing() {
+        ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
         sites.getSites().forEach(site -> {
             Portal portal = portalRepository.findByNameAndUrl(site.getName(), site.getUrl());
             if (portal != null){
@@ -50,7 +51,6 @@ public class IndexingServiceImpl implements IndexingService{
             newPortal.setStatus(IndexStatus.INDEXING);
             newPortal.setStatusTime(new Date());
             portalRepository.save(newPortal);
-            ForkJoinPool pool = new ForkJoinPool();
             try {
                 pool.invoke(new SiteLinker(newPortal.getUrl()
                         ,new URL(portalLink).getHost().replaceAll("^www.", "")
@@ -63,7 +63,6 @@ public class IndexingServiceImpl implements IndexingService{
                 newPortal.setStatus(IndexStatus.FAILED);
                 portalRepository.save(newPortal);
             }
-
         });
 
 

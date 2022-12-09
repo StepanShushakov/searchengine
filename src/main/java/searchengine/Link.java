@@ -1,13 +1,11 @@
 package searchengine;
 
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Value;
 import searchengine.model.Page;
-import searchengine.model.PageRepository;
 import searchengine.model.Portal;
-import searchengine.model.PortalRepository;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -17,8 +15,7 @@ import java.util.Date;
 import java.util.logging.Logger;
 
 public class Link {
-    private String url;
-    private String host;
+    private PageDescription pageDescription;
     private RepositoriesFactory repositories;
     private ConnectionPerformance connectionPerformance;
     private ArrayList<String> childrenLinks = new ArrayList<>();
@@ -34,37 +31,36 @@ public class Link {
         this.repositories = repositories;
         String pagePath = "";
         try {
-            pagePath = new URL(url).getPath();
+            pagePath = new URL(pageDescription.getUrl()).getPath();
         } catch (MalformedURLException e) {
             //throw new RuntimeException(e);
         }
+        Page page = new Page();
+        page.setPortal(pageDescription.getPortal());
+        page.setPath(pagePath.isEmpty() ? "/" : pagePath);
         if (linkIsAdded(pageDescription.getPortal(), pagePath)) return;
         try {
             Thread.sleep(rnd(500, 5000));
         } catch (InterruptedException e) {
             //throw new RuntimeException(e);
         }
-        this.url = url;
-        this.host = host;
+        this.pageDescription = pageDescription;
         this.connectionPerformance = connectionPerformance;
         Document doc = null;
-        Page page = new Page();
-        page.setPortal(pageDescription.getPortal());
         try {
-            doc = Jsoup.connect(url)
+            doc = Jsoup.connect(pageDescription.getUrl())
                     .userAgent(connectionPerformance.getUserAgent())
                     .referrer(connectionPerformance.getReferrer())
                     .get();
             page.setCode(doc.connection().response().statusCode());
         } catch (IOException e) {
-            //throw new RuntimeException(e);
+            page.setCode(((HttpStatusException) e).getStatusCode());
+            page.setContent(e.toString());
+            savePage(page);
         }
-        if (doc == null) {
-            return;
-        }
+        if (doc == null) return;
         page.setContent(doc.toString());
-        page.setPath(pagePath.isEmpty() ? "/" : pagePath);
-        savePage(page, pageDescription.getPortal());
+        savePage(page);
         Elements elements = doc.select("a");
         if (elements.size() > 0) {
             elements.forEach(element -> {
@@ -79,7 +75,8 @@ public class Link {
 
     private boolean linkIsCorrect(String childrenLink) {
         try {
-            return new URL(childrenLink).getHost().replaceAll("^www.", "").equals(this.host);
+            return new URL(childrenLink).getHost().replaceAll("^www.", "")
+                    .equals(this.pageDescription.getHost());
         } catch (MalformedURLException e) {
             //throw new RuntimeException(e);
             Logger.getLogger(Link.class.getName()).info("catch at url pulling: " + e);
@@ -91,7 +88,8 @@ public class Link {
         return childrenLinks;
     }
 
-    private synchronized void savePage(Page page, Portal portal) {
+    private void savePage(Page page) {
+        Portal portal = page.getPortal();
         if (linkIsAdded(portal, page.getPath())) return;
         repositories.getPageRepository().save(page);
         portal.setStatusTime(new Date());

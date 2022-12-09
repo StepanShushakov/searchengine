@@ -1,6 +1,5 @@
 package searchengine;
 
-import searchengine.model.Page;
 import searchengine.model.Portal;
 
 public class PageDescription {

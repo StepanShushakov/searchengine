@@ -1,9 +1,6 @@
 package searchengine;
 
-import searchengine.model.Page;
-import searchengine.model.PageRepository;
 import searchengine.model.Portal;
-import searchengine.model.PortalRepository;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,7 +30,7 @@ public class SiteLinker extends RecursiveAction {
     protected void compute() {
         Logger.getLogger(SiteLinker.class.getName())
                 .info("Compute method. Thread: " + Thread.currentThread().getName()
-                        + "\nurl: " + this.pageDescription.getUrl());
+                        + " url: " + this.pageDescription.getUrl());
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (int i = 0; i < childrenLinks.size(); i++) {
