@@ -28,10 +28,7 @@ public class Link {
         return (int) (Math.random() * ++max) + min;
     }
 
-    public Link(String url,
-                String host,
-                Page page,
-                Portal portal,
+    public Link(PageDescription pageDescription,
                 RepositoriesFactory repositories,
                 ConnectionPerformance connectionPerformance) {
         this.repositories = repositories;
@@ -41,7 +38,7 @@ public class Link {
         } catch (MalformedURLException e) {
             //throw new RuntimeException(e);
         }
-        if (linkIsAdded(portal, pagePath)) return;
+        if (linkIsAdded(pageDescription.getPortal(), pagePath)) return;
         try {
             Thread.sleep(rnd(500, 5000));
         } catch (InterruptedException e) {
@@ -51,6 +48,8 @@ public class Link {
         this.host = host;
         this.connectionPerformance = connectionPerformance;
         Document doc = null;
+        Page page = new Page();
+        page.setPortal(pageDescription.getPortal());
         try {
             doc = Jsoup.connect(url)
                     .userAgent(connectionPerformance.getUserAgent())
@@ -65,7 +64,7 @@ public class Link {
         }
         page.setContent(doc.toString());
         page.setPath(pagePath.isEmpty() ? "/" : pagePath);
-        savePage(page, portal);
+        savePage(page, pageDescription.getPortal());
         Elements elements = doc.select("a");
         if (elements.size() > 0) {
             elements.forEach(element -> {
@@ -92,7 +91,7 @@ public class Link {
         return childrenLinks;
     }
 
-    private void savePage(Page page, Portal portal) {
+    private synchronized void savePage(Page page, Portal portal) {
         if (linkIsAdded(portal, page.getPath())) return;
         repositories.getPageRepository().save(page);
         portal.setStatusTime(new Date());

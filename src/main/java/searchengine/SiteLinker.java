@@ -13,9 +13,7 @@ import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
 public class SiteLinker extends RecursiveAction {
-    private String url;
-    private String host;
-    private Portal portal;
+    private PageDescription pageDescription;
     private Link link;
     private RepositoriesFactory repositories;
     private ConnectionPerformance connectionPerformance;
@@ -25,29 +23,25 @@ public class SiteLinker extends RecursiveAction {
                       Portal portal,
                       RepositoriesFactory repositories,
                       ConnectionPerformance connectionPerformance) {
-        this.url = url;
-        this.host = host;
-        this.portal = portal;
         this.repositories = repositories;
         this.connectionPerformance = connectionPerformance;
-        Page page = new Page();
-        page.setPortal(portal);
-        this.link = new Link(url, host, page, portal, repositories, connectionPerformance);
+        this.pageDescription = new PageDescription(url, host, portal);
+        this.link = new Link(pageDescription, repositories, connectionPerformance);
     }
 
     @Override
     protected void compute() {
         Logger.getLogger(SiteLinker.class.getName())
                 .info("Compute method. Thread: " + Thread.currentThread().getName()
-                        + "\nurl: " + this.url);
+                        + "\nurl: " + this.pageDescription.getUrl());
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (int i = 0; i < childrenLinks.size(); i++) {
             String link = childrenLinks.get(i);
             if (linkIsAdded(link)) continue;
             SiteLinker task = new SiteLinker(link
-                    ,this.host
-                    ,this.portal
+                    ,this.pageDescription.getHost()
+                    ,this.pageDescription.getPortal()
                     ,this.repositories
                     ,this.connectionPerformance);
             task.fork();
@@ -70,6 +64,6 @@ public class SiteLinker extends RecursiveAction {
             // что страница уже добавлена,
             // что бы не пытаться её разбирать
         }
-        return repositories.getPageRepository().findByPortalAndPath(this.portal, path).size() != 0;
+        return repositories.getPageRepository().findByPortalAndPath(this.pageDescription.getPortal(), path).size() != 0;
     }
 }
