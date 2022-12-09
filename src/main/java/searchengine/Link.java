@@ -14,6 +14,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.Logger;
 
 public class Link {
     private String url;
@@ -68,7 +69,7 @@ public class Link {
         Elements elements = doc.select("a");
         if (elements.size() > 0) {
             elements.forEach(element -> {
-                String childrenLink = element.attr("href");
+                String childrenLink = element.attr("abs:href");
                 if (childrenLink.toLowerCase().startsWith("http")
                     && linkIsCorrect(childrenLink)) {
                     this.childrenLinks.add(childrenLink);
@@ -82,6 +83,7 @@ public class Link {
             return new URL(childrenLink).getHost().replaceAll("^www.", "").equals(this.host);
         } catch (MalformedURLException e) {
             //throw new RuntimeException(e);
+            Logger.getLogger(Link.class.getName()).info("catch at url pulling: " + e);
             return false;
         }
     }
