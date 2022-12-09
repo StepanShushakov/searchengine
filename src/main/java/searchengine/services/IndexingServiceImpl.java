@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import searchengine.ConnectionPerformance;
+import searchengine.RepositoriesFactory;
 import searchengine.SiteLinker;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
@@ -54,8 +55,7 @@ public class IndexingServiceImpl implements IndexingService{
                 pool.invoke(new SiteLinker(newPortal.getUrl()
                         ,new URL(portalLink).getHost().replaceAll("^www.", "")
                         ,newPortal
-                        ,portalRepository
-                        ,pageRepository
+                        ,new RepositoriesFactory(portalRepository, pageRepository)
                         ,new ConnectionPerformance(userAgent, referrer)));
             } catch (MalformedURLException e) {
 //                throw new RuntimeException(e);

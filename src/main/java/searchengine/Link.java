@@ -18,8 +18,7 @@ import java.util.Date;
 public class Link {
     private String url;
     private String host;
-    private PortalRepository portalRepository;
-    private PageRepository pageRepository;
+    private RepositoriesFactory repositories;
     private ConnectionPerformance connectionPerformance;
     private ArrayList<String> childrenLinks = new ArrayList<>();
 
@@ -32,19 +31,23 @@ public class Link {
                 String host,
                 Page page,
                 Portal portal,
-                PortalRepository portalRepository,
-                PageRepository pageRepository,
+                RepositoriesFactory repositories,
                 ConnectionPerformance connectionPerformance) {
+        this.repositories = repositories;
+        String pagePath = "";
+        try {
+            pagePath = new URL(url).getPath();
+        } catch (MalformedURLException e) {
+            //throw new RuntimeException(e);
+        }
+        if (linkIsAdded(portal, pagePath)) return;
         try {
             Thread.sleep(rnd(500, 5000));
         } catch (InterruptedException e) {
             //throw new RuntimeException(e);
-
         }
         this.url = url;
         this.host = host;
-        this.portalRepository = portalRepository;
-        this.pageRepository = pageRepository;
         this.connectionPerformance = connectionPerformance;
         Document doc = null;
         try {
@@ -60,12 +63,6 @@ public class Link {
             return;
         }
         page.setContent(doc.toString());
-        String pagePath = "";
-        try {
-            pagePath = new URL(url).getPath();
-        } catch (MalformedURLException e) {
-            //throw new RuntimeException(e);
-        }
         page.setPath(pagePath.isEmpty() ? "/" : pagePath);
         savePage(page, portal);
         Elements elements = doc.select("a");
@@ -78,7 +75,6 @@ public class Link {
                 }
             });
         }
-
     }
 
     private boolean linkIsCorrect(String childrenLink) {
@@ -95,8 +91,13 @@ public class Link {
     }
 
     private void savePage(Page page, Portal portal) {
-        this.pageRepository.save(page);
+        if (repositories.getPageRepository().findByPortalAndPath(portal, page.getPath()).size() != 0) return;
+        repositories.getPageRepository().save(page);
         portal.setStatusTime(new Date());
-        this.portalRepository.save(portal);
+        repositories.getPortalRepository().save(portal);
+    }
+
+    private boolean linkIsAdded(Portal portal, String path) {
+        return repositories.getPageRepository().findByPortalAndPath(portal, path).size() != 0;
     }
 }
