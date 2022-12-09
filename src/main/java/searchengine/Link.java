@@ -91,7 +91,7 @@ public class Link {
     }
 
     private void savePage(Page page, Portal portal) {
-        if (repositories.getPageRepository().findByPortalAndPath(portal, page.getPath()).size() != 0) return;
+        if (linkIsAdded(portal, page.getPath())) return;
         repositories.getPageRepository().save(page);
         portal.setStatusTime(new Date());
         repositories.getPortalRepository().save(portal);

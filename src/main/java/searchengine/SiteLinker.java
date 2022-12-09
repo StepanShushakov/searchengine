@@ -44,6 +44,7 @@ public class SiteLinker extends RecursiveAction {
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (int i = 0; i < childrenLinks.size(); i++) {
             String link = childrenLinks.get(i);
+            if (linkIsAdded(link)) continue;
             SiteLinker task = new SiteLinker(link
                     ,this.host
                     ,this.portal
@@ -57,5 +58,18 @@ public class SiteLinker extends RecursiveAction {
                     .info("join Thread: " + Thread.currentThread().getName());
             task.join();
         }
+    }
+
+    private boolean linkIsAdded(String link) {
+        String path = "";
+        try {
+            path = new URL(link).getPath();
+            if (path.isEmpty()) path = "/";
+        } catch (MalformedURLException e) {
+            return true;    //если произойдёт исключение, скажем,
+            // что страница уже добавлена,
+            // что бы не пытаться её разбирать
+        }
+        return repositories.getPageRepository().findByPortalAndPath(this.portal, path).size() != 0;
     }
 }
