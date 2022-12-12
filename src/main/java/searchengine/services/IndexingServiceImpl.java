@@ -58,7 +58,7 @@ public class IndexingServiceImpl implements IndexingService{
         ArrayList<PortalDescription> portals = new ArrayList<>();
         for (Site site: sites.getSites()) {
             Portal portal = portalRepository.findByNameAndUrl(site.getName(), site.getUrl());
-            if (portal.getStatus() == IndexStatus.INDEXING)
+            if (portal != null && portal.getStatus() == IndexStatus.INDEXING)
                 return responseError(response, "Индексация уже запущена");
             else portals.add(new PortalDescription(portal, site.getName(), site.getUrl()));
         }
@@ -92,6 +92,12 @@ public class IndexingServiceImpl implements IndexingService{
 
         response.setResult(true);
         return response;
+    }
+
+    @Override
+    public IndexingResponse stopIndexing() {
+        IndexingResponse response = new IndexingResponse();
+        return responseError(response, "Индексация не запущена");
     }
 
     private IndexingResponse responseError(IndexingResponse response, String errorString) {
