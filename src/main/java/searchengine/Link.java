@@ -1,5 +1,7 @@
 package searchengine;
 
+import com.google.common.util.concurrent.Uninterruptibles;
+import org.attoparser.dom.Text;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -12,6 +14,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class Link {
@@ -36,14 +39,11 @@ public class Link {
             //throw new RuntimeException(e);
         }
         Page page = new Page();
-        page.setPortal(pageDescription.getPortal());
+        Portal portal = pageDescription.getPortal();
+        page.setPortal(portal);
         page.setPath(pagePath.isEmpty() ? "/" : pagePath);
         if (linkIsAdded(pageDescription.getPortal(), pagePath)) return;
-        try {
-            Thread.sleep(rnd(500, 5000));
-        } catch (InterruptedException e) {
-            //throw new RuntimeException(e);
-        }
+        Uninterruptibles.sleepUninterruptibly(rnd(500, 5000), TimeUnit.MILLISECONDS);
         this.pageDescription = pageDescription;
         this.connectionPerformance = connectionPerformance;
         Document doc = null;
@@ -56,6 +56,7 @@ public class Link {
         } catch (IOException e) {
             page.setCode(((HttpStatusException) e).getStatusCode());
             page.setContent(e.toString());
+            portal.setLastError(new Text(e.toString()));
             savePage(page);
         }
         if (doc == null) return;
@@ -92,6 +93,10 @@ public class Link {
         Portal portal = page.getPortal();
         if (linkIsAdded(portal, page.getPath())) return;
         repositories.getPageRepository().save(page);
+        savePortal(portal);
+    }
+
+    private void savePortal(Portal portal) {
         portal.setStatusTime(new Date());
         repositories.getPortalRepository().save(portal);
     }

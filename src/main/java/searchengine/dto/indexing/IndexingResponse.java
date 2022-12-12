@@ -5,9 +5,22 @@ import searchengine.config.SitesList;
 
 @Data
 public class IndexingResponse {
-    private SitesList sites;
+    private boolean result;
+    private String error;
 
-    public void setSites(SitesList sites) {
-        this.sites = sites;
+    public boolean isResult() {
+        return result;
+    }
+
+    public void setResult(boolean result) {
+        this.result = result;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
     }
 }

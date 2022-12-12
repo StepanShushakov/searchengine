@@ -4,8 +4,13 @@
         <createIndex indexName="index_path" tableName="page">
             <column name="path"/>
         </createIndex>
+        <addUniqueConstraint
+                columnNames="site_id, path"
+                constraintName="unique_page_index"
+                tableName="page"
+        />
         <modifySql dbms="mysql">
-            <replace replace="`path`" with="`path`(700)"/> <!-- "700" limits index size -->
+            <replace replace="`path`" with="`path`(255)"/>
         </modifySql>
     </changeSet>
 </databaseChangeLog>
