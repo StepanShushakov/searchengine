@@ -94,8 +94,8 @@ public class IndexingServiceImpl implements IndexingService{
 
     private void closeStatementConnection() {
         try {
-            statement.close();
-            connection.close();
+            if (this.statement != null) this.statement.close();
+            if (this.connection != null) this.connection.close();
         } catch (SQLException e) {
 //            throw new RuntimeException(e);
         }
