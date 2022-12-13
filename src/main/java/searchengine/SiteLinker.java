@@ -1,10 +1,13 @@
 package searchengine;
 
+import searchengine.model.IndexStatus;
 import searchengine.model.Portal;
+import searchengine.model.PortalRepository;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
@@ -49,6 +52,13 @@ public class SiteLinker extends RecursiveAction {
                     .info("join Thread: " + Thread.currentThread().getName());
             task.join();
         }
+//        PortalRepository portalRepository = repositories.getPortalRepository();
+//        List<Portal> portals = portalRepository.findAll();
+//        portals.forEach(portal -> {
+//            portal.setStatus(IndexStatus.INDEXED);
+//            portal.setStatusTime(new Date());
+//            portalRepository.save(portal);
+//        });
     }
 
     private boolean linkIsAdded(String link) {

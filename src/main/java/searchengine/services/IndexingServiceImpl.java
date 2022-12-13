@@ -1,6 +1,8 @@
 package searchengine.services;
 
+import com.google.common.util.concurrent.Uninterruptibles;
 import lombok.RequiredArgsConstructor;
+import org.attoparser.dom.Text;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,7 +23,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +37,8 @@ public class IndexingServiceImpl implements IndexingService{
     private PortalRepository portalRepository;
     @Autowired
     private PageRepository pageRepository;
+
+    private ForkJoinPool pool = new ForkJoinPool();
 
     @Value("${jsoupFakePerformance.userAgent}")
     private String userAgent;
@@ -54,7 +60,6 @@ public class IndexingServiceImpl implements IndexingService{
     @Override
     public IndexingResponse startIndexing() {
         IndexingResponse response = new IndexingResponse();
-        ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
         ArrayList<PortalDescription> portals = new ArrayList<>();
         for (Site site: sites.getSites()) {
             Portal portal = portalRepository.findByNameAndUrl(site.getName(), site.getUrl());
@@ -89,7 +94,7 @@ public class IndexingServiceImpl implements IndexingService{
             }
         }
         closeStatementConnection();
-
+        pool.shutdown();
         response.setResult(true);
         return response;
     }
@@ -97,7 +102,24 @@ public class IndexingServiceImpl implements IndexingService{
     @Override
     public IndexingResponse stopIndexing() {
         IndexingResponse response = new IndexingResponse();
-        return responseError(response, "Индексация не запущена");
+        if (this.pool.getPoolSize() == 0)
+            return responseError(response, "Индексация не запущена");
+        else {
+            this.pool.shutdownNow();
+            Uninterruptibles.sleepUninterruptibly(2, TimeUnit.SECONDS);
+            List<Portal> portals = portalRepository.findAll();
+            for (Portal portal: portals) {
+//            portals.forEach(portal -> {
+                portal.setStatus(IndexStatus.FAILED);
+                portal.setLastError(new Text("Индексация остановлена пользователем"));
+                portal.setStatusTime(new Date());
+                portalRepository.save(portal);
+            }
+//            )
+            ;
+            response.setResult(this.pool.isShutdown());
+            return response;
+        }
     }
 
     private IndexingResponse responseError(IndexingResponse response, String errorString) {

@@ -21,7 +21,7 @@ public class Page {
     @Column(nullable = false)
     private int code;
 
-    @Column(columnDefinition = "MEDIUMTEXT", nullable = false)
+    @Column(columnDefinition = "MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci COMMENT 'HTML-код страницы'", nullable = false)
     private String content;
 
     public int getId() {

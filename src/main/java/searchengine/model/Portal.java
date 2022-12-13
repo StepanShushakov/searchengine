@@ -84,4 +84,20 @@ public class Portal {
     public void setName(String name) {
         this.name = name;
     }
+
+    public List<Page> getPages() {
+        return pages;
+    }
+
+    public void setPages(List<Page> pages) {
+        this.pages = pages;
+    }
+
+    public List<Lemma> getLemmas() {
+        return lemmas;
+    }
+
+    public void setLemmas(List<Lemma> lemmas) {
+        this.lemmas = lemmas;
+    }
 }
