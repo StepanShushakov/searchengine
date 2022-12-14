@@ -17,6 +17,7 @@ public class SiteLinker extends RecursiveAction {
     private Link link;
     private RepositoriesFactory repositories;
     private ConnectionPerformance connectionPerformance;
+    private static Boolean stopCrawling = false;
 
     public SiteLinker(String url,
                       String host,
@@ -31,6 +32,7 @@ public class SiteLinker extends RecursiveAction {
 
     @Override
     protected void compute() {
+        if (stopCrawling) return;
         Logger.getLogger(SiteLinker.class.getName())
                 .info("Compute method. Thread: " + Thread.currentThread().getName()
                         + " url: " + this.pageDescription.getUrl());
@@ -59,6 +61,10 @@ public class SiteLinker extends RecursiveAction {
 //            portal.setStatusTime(new Date());
 //            portalRepository.save(portal);
 //        });
+    }
+
+    public static void setStopCrawling(Boolean stopCrawling) {
+        SiteLinker.stopCrawling = stopCrawling;
     }
 
     private boolean linkIsAdded(String link) {

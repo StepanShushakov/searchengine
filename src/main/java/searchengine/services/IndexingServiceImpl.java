@@ -82,7 +82,10 @@ public class IndexingServiceImpl implements IndexingService{
             newPortal.setStatusTime(new Date());
             portalRepository.save(newPortal);
             try {
-                pool.submit(new SiteLinker(newPortal.getUrl()
+                if (this.pool.isShutdown()) {
+                    this.pool = new ForkJoinPool();
+                }
+                this.pool.submit(new SiteLinker(newPortal.getUrl()
                         , new URL(portalLink).getHost().replaceAll("^www.", "")
                         , newPortal
                         , new RepositoriesFactory(portalRepository, pageRepository)
@@ -95,7 +98,7 @@ public class IndexingServiceImpl implements IndexingService{
             }
         }
         closeStatementConnection();
-        pool.shutdown();
+        this.pool.shutdown();
         response.setResult(true);
         return response;
     }
@@ -106,6 +109,7 @@ public class IndexingServiceImpl implements IndexingService{
         if (this.pool.getPoolSize() == 0)
             return responseError(response, "Индексация не запущена");
         else {
+            SiteLinker.setStopCrawling(true);
             pool.shutdown();
             try {
                 if ((!pool.awaitTermination(800, TimeUnit.MILLISECONDS)))
@@ -113,6 +117,7 @@ public class IndexingServiceImpl implements IndexingService{
             } catch (InterruptedException e) {
                 pool.shutdownNow();
             }
+            while (pool.getPoolSize() > 0) {};  //подождем, пока завершатся задачи пула потоков
             List<Portal> portals = portalRepository.findAll();
             for (Portal portal: portals) {
 //            portals.forEach(portal -> {
