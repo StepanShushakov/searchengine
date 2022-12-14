@@ -1,5 +1,6 @@
 package searchengine.services;
 
+import ch.qos.logback.core.util.TimeUtil;
 import com.google.common.util.concurrent.Uninterruptibles;
 import lombok.RequiredArgsConstructor;
 import org.attoparser.dom.Text;
@@ -105,8 +106,13 @@ public class IndexingServiceImpl implements IndexingService{
         if (this.pool.getPoolSize() == 0)
             return responseError(response, "Индексация не запущена");
         else {
-            this.pool.shutdownNow();
-            Uninterruptibles.sleepUninterruptibly(2, TimeUnit.SECONDS);
+            pool.shutdown();
+            try {
+                if ((!pool.awaitTermination(800, TimeUnit.MILLISECONDS)))
+                pool.shutdownNow();
+            } catch (InterruptedException e) {
+                pool.shutdownNow();
+            }
             List<Portal> portals = portalRepository.findAll();
             for (Portal portal: portals) {
 //            portals.forEach(portal -> {
@@ -139,8 +145,8 @@ public class IndexingServiceImpl implements IndexingService{
 
     private void deletePagesByPortal(Portal portal) {
         try {
-            if (this.connection == null) {
-
+            if (this.connection == null ||
+                    this.connection.isClosed()) {
                 this.connection = (Connection) DriverManager.getConnection(DBUrl, DBUserName, DBPassword);
                 this.statement = connection.createStatement();
             }
