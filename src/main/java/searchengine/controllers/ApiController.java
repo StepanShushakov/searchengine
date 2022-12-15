@@ -40,4 +40,9 @@ public class ApiController {
     public ResponseEntity<Boolean> echo() {
         return ResponseEntity.ok(indexingService.echo());
     }
+
+    @GetMapping("/getPoolSize")
+    public ResponseEntity<Integer> getPoolSize() {
+        return ResponseEntity.ok(indexingService.getPoolSize());
+    }
 }

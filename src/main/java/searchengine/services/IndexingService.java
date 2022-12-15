@@ -8,4 +8,6 @@ public interface IndexingService {
     IndexingResponse stopIndexing();
 
     Boolean echo();
+
+    Integer getPoolSize();
 }

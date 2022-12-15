@@ -133,6 +133,11 @@ public class IndexingServiceImpl implements IndexingService {
         return true;
     }
 
+    @Override
+    public Integer getPoolSize() {
+        return this.pool.getPoolSize();
+    }
+
     private IndexingResponse responseError(IndexingResponse response, String errorString) {
         response.setError(errorString);
         response.setResult(false);

@@ -2,7 +2,6 @@ package searchengine;
 
 import searchengine.model.IndexStatus;
 import searchengine.model.Portal;
-import searchengine.model.PortalRepository;
 
 import java.net.MalformedURLException;
 import java.net.URL;
