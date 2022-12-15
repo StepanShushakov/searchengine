@@ -116,15 +116,12 @@ public class IndexingServiceImpl implements IndexingService {
             }
             while (pool.getPoolSize() > 0) {};  //подождем, пока завершатся задачи пула потоков
             List<Portal> portals = portalRepository.findAll();
-            for (Portal portal: portals) {
-//            portals.forEach(portal -> {
+            portals.forEach(portal -> {
                 portal.setStatus(IndexStatus.FAILED);
                 portal.setLastError("Индексация остановлена пользователем");
                 portal.setStatusTime(new Date());
                 portalRepository.save(portal);
-            }
-//            )
-            ;
+            });
             response.setResult(this.pool.isShutdown());
             return response;
         }
