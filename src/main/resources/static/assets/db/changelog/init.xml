@@ -56,7 +56,7 @@
             <column autoIncrement="true" name="id" type="INT">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="last_error" type="TINYBLOB"/>
+            <column name="last_error" type="TEXT"/>
             <column name="name" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>

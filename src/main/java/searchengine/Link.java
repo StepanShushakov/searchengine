@@ -56,7 +56,7 @@ public class Link {
         } catch (IOException e) {
             page.setCode(((HttpStatusException) e).getStatusCode());
             page.setContent(e.toString());
-            portal.setLastError(new Text(e.toString()));
+            portal.setLastError(e.toString());
             savePage(page);
         }
         if (doc == null) return;

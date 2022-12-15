@@ -1,9 +1,6 @@
 package searchengine.services;
 
-import ch.qos.logback.core.util.TimeUtil;
-import com.google.common.util.concurrent.Uninterruptibles;
 import lombok.RequiredArgsConstructor;
-import org.attoparser.dom.Text;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-public class IndexingServiceImpl implements IndexingService{
+public class IndexingServiceImpl implements IndexingService {
 
     private final SitesList sites;
 
@@ -122,7 +119,7 @@ public class IndexingServiceImpl implements IndexingService{
             for (Portal portal: portals) {
 //            portals.forEach(portal -> {
                 portal.setStatus(IndexStatus.FAILED);
-                portal.setLastError(new Text("Индексация остановлена пользователем"));
+                portal.setLastError("Индексация остановлена пользователем");
                 portal.setStatusTime(new Date());
                 portalRepository.save(portal);
             }

@@ -22,8 +22,8 @@ public class Portal {
     @Column(name = "status_time", nullable = false)
     private Date statusTime;
 
-    @Column(name = "last_error")
-    private Text lastError;
+    @Column(name = "last_error", columnDefinition = "TEXT")
+    private String lastError;
 
     @Column(nullable = false)
     private String url;
@@ -61,11 +61,11 @@ public class Portal {
         this.statusTime = statusTime;
     }
 
-    public Text getLastError() {
+    public String getLastError() {
         return lastError;
     }
 
-    public void setLastError(Text lastError) {
+    public void setLastError(String lastError) {
         this.lastError = lastError;
     }
 
