@@ -130,6 +130,11 @@ public class IndexingServiceImpl implements IndexingService {
         }
     }
 
+    @Override
+    public Boolean echo() {
+        return true;
+    }
+
     private IndexingResponse responseError(IndexingResponse response, String errorString) {
         response.setError(errorString);
         response.setResult(false);

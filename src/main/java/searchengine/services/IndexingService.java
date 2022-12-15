@@ -6,4 +6,6 @@ public interface IndexingService {
     IndexingResponse startIndexing();
 
     IndexingResponse stopIndexing();
+
+    Boolean echo();
 }

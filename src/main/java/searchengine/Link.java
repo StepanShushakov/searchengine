@@ -1,7 +1,6 @@
 package searchengine;
 
 import com.google.common.util.concurrent.Uninterruptibles;
-import org.attoparser.dom.Text;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
