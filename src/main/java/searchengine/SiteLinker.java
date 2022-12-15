@@ -19,15 +19,19 @@ public class SiteLinker extends RecursiveAction {
     private ConnectionPerformance connectionPerformance;
     private static Boolean stopCrawling = false;
 
+    private Boolean isParent;
+
     public SiteLinker(String url,
                       String host,
                       Portal portal,
                       RepositoriesFactory repositories,
-                      ConnectionPerformance connectionPerformance) {
+                      ConnectionPerformance connectionPerformance,
+                      Boolean isParent) {
         this.repositories = repositories;
         this.connectionPerformance = connectionPerformance;
         this.pageDescription = new PageDescription(url, host, portal);
         this.link = new Link(pageDescription, repositories, connectionPerformance);
+        this.isParent = isParent;
     }
 
     @Override
@@ -35,7 +39,8 @@ public class SiteLinker extends RecursiveAction {
         if (stopCrawling) return;
         Logger.getLogger(SiteLinker.class.getName())
                 .info("Compute method. Thread: " + Thread.currentThread().getName()
-                        + " url: " + this.pageDescription.getUrl());
+                        + " url: " + this.pageDescription.getUrl()
+                        + " parent: " + this.isParent);
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (int i = 0; i < childrenLinks.size(); i++) {
@@ -45,14 +50,23 @@ public class SiteLinker extends RecursiveAction {
                     ,this.pageDescription.getHost()
                     ,this.pageDescription.getPortal()
                     ,this.repositories
-                    ,this.connectionPerformance);
+                    ,this.connectionPerformance
+                    ,false);
             task.fork();
             taskList.add(task);
         }
         for (SiteLinker task : taskList) {
             Logger.getLogger(SiteLinker.class.getName())
-                    .info("join Thread: " + Thread.currentThread().getName());
+                    .info("join Thread: " + Thread.currentThread().getName()
+                            + " url: "+ task.getPageDescription().getUrl()
+                            + " parent: " + task.isParent());
             task.join();
+            if (task.isParent()) {
+                Portal portal = task.getPageDescription().getPortal();
+                portal.setStatus(IndexStatus.INDEXED);
+                portal.setStatusTime(new Date());
+                task.getRepositories().getPortalRepository().save(portal);
+            }
         }
 //        PortalRepository portalRepository = repositories.getPortalRepository();
 //        List<Portal> portals = portalRepository.findAll();
@@ -61,6 +75,18 @@ public class SiteLinker extends RecursiveAction {
 //            portal.setStatusTime(new Date());
 //            portalRepository.save(portal);
 //        });
+    }
+
+    private boolean isParent() {
+        return this.isParent;
+    }
+
+    public PageDescription getPageDescription() {
+        return pageDescription;
+    }
+
+    public RepositoriesFactory getRepositories() {
+        return repositories;
     }
 
     public static void setStopCrawling(Boolean stopCrawling) {

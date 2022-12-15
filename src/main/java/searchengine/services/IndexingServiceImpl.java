@@ -86,7 +86,8 @@ public class IndexingServiceImpl implements IndexingService {
                         , new URL(portalLink).getHost().replaceAll("^www.", "")
                         , newPortal
                         , new RepositoriesFactory(portalRepository, pageRepository)
-                        , new ConnectionPerformance(userAgent, referrer)));
+                        , new ConnectionPerformance(userAgent, referrer)
+                        , true));
             } catch (MalformedURLException e) {
                 newPortal.setStatusTime(new Date());
                 newPortal.setStatus(IndexStatus.FAILED);
