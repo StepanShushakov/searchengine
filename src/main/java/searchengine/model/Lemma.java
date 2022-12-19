@@ -20,6 +20,9 @@ public class Lemma {
     @Column(nullable = false)
     private int frequency;
 
+    @OneToOne(mappedBy = "lemma")
+    private IndexEntity index;
+
     public int getId() {
         return id;
     }

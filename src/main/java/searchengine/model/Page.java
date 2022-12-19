@@ -4,7 +4,7 @@ import javax.persistence.*;
 import javax.persistence.Index;
 
 @Entity
-@Table(indexes = @Index(name="index_path", columnList = "path"))
+@Table(/*indexes = @Index(name="index_path", columnList = "path")*/)
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +23,9 @@ public class Page {
 
     @Column(columnDefinition = "MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci COMMENT 'HTML-код страницы'", nullable = false)
     private String content;
+
+    @OneToOne(mappedBy = "page")
+    private IndexEntity index;
 
     public int getId() {
         return id;
