@@ -24,11 +24,13 @@ public class SiteLinker extends RecursiveAction {
                       String host,
                       Portal portal,
                       RepositoriesFactory repositories,
-                      ConnectionPerformance connectionPerformance) {
+                      ConnectionPerformance connectionPerformance,
+                      Boolean isParent) {
         this.repositories = repositories;
         this.connectionPerformance = connectionPerformance;
         this.pageDescription = new PageDescription(url, host, portal);
         this.link = new Link(pageDescription, repositories, connectionPerformance);
+        this.isParent = isParent;
     }
 
     @Override
@@ -47,7 +49,8 @@ public class SiteLinker extends RecursiveAction {
                     ,this.pageDescription.getHost()
                     ,this.pageDescription.getPortal()
                     ,this.repositories
-                    ,this.connectionPerformance);
+                    ,this.connectionPerformance
+                    ,false);
             task.fork();
             taskList.add(task);
         }
@@ -63,6 +66,13 @@ public class SiteLinker extends RecursiveAction {
                 portal.setStatusTime(new Date());
                 task.getRepositories().getPortalRepository().save(portal);
             }
+        }
+        if (this.isParent) {
+            join();
+            Portal portal = getPageDescription().getPortal();
+            portal.setStatus(IndexStatus.INDEXED);
+            portal.setStatusTime(new Date());
+            getRepositories().getPortalRepository().save(portal);
         }
 //        PortalRepository portalRepository = repositories.getPortalRepository();
 //        List<Portal> portals = portalRepository.findAll();
