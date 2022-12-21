@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import searchengine.ConnectionPerformance;
-import searchengine.PortalDescription;
-import searchengine.RepositoriesFactory;
-import searchengine.SiteLinker;
+import searchengine.*;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
@@ -22,6 +19,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
@@ -36,7 +35,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Autowired
     private PageRepository pageRepository;
 
-    private ForkJoinPool pool = new ForkJoinPool();
+    private ExecutorService executor;
 
     @Value("${jsoupFakePerformance.userAgent}")
     private String userAgent;
@@ -65,6 +64,7 @@ public class IndexingServiceImpl implements IndexingService {
                 return responseError(response, "Индексация уже запущена");
             else portals.add(new PortalDescription(portal, site.getName(), site.getUrl()));
         }
+        this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (PortalDescription portalDescription : portals) {
             Portal portal = portalDescription.getPortal();
             if (portal != null) {
@@ -79,15 +79,15 @@ public class IndexingServiceImpl implements IndexingService {
             newPortal.setStatusTime(new Date());
             portalRepository.save(newPortal);
             try {
-                if (this.pool.isShutdown()) {
-                    this.pool = new ForkJoinPool();
-                }
-                this.pool.submit(new SiteLinker(newPortal.getUrl()
+//                if (this.pool.isShutdown()) {
+//                    this.pool = new ForkJoinPool();
+//                }
+//                this.pool.submit(new SiteLinker(newPortal.getUrl()
+                executor.submit(new CrawlStarter(newPortal.getUrl()
                         , new URL(portalLink).getHost().replaceAll("^www.", "")
                         , newPortal
                         , new RepositoriesFactory(portalRepository, pageRepository)
-                        , new ConnectionPerformance(userAgent, referrer)
-                        , true));
+                        , new ConnectionPerformance(userAgent, referrer)));
             } catch (MalformedURLException e) {
                 newPortal.setStatusTime(new Date());
                 newPortal.setStatus(IndexStatus.FAILED);
@@ -96,7 +96,8 @@ public class IndexingServiceImpl implements IndexingService {
             }
         }
         closeStatementConnection();
-        this.pool.shutdown();
+        executor.shutdown();
+//        this.pool.shutdown();
         response.setResult(true);
         return response;
     }
@@ -104,28 +105,28 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse stopIndexing() {
         IndexingResponse response = new IndexingResponse();
-        if (this.pool.getPoolSize() == 0)
+//        if (this.pool.getPoolSize() == 0)
             return responseError(response, "Индексация не запущена");
-        else {
-            SiteLinker.setStopCrawling(true);
-            pool.shutdown();
-            try {
-                if ((!pool.awaitTermination(800, TimeUnit.MILLISECONDS)))
-                pool.shutdownNow();
-            } catch (InterruptedException e) {
-                pool.shutdownNow();
-            }
-            while (pool.getPoolSize() > 0) {};  //подождем, пока завершатся задачи пула потоков
-            List<Portal> portals = portalRepository.findAll();
-            portals.forEach(portal -> {
-                portal.setStatus(IndexStatus.FAILED);
-                portal.setLastError("Индексация остановлена пользователем");
-                portal.setStatusTime(new Date());
-                portalRepository.save(portal);
-            });
-            response.setResult(this.pool.isShutdown());
-            return response;
-        }
+//        else {
+//            SiteLinker.setStopCrawling(true);
+//            pool.shutdown();
+//            try {
+//                if ((!pool.awaitTermination(800, TimeUnit.MILLISECONDS)))
+//                pool.shutdownNow();
+//            } catch (InterruptedException e) {
+//                pool.shutdownNow();
+//            }
+//            while (pool.getPoolSize() > 0) {};  //подождем, пока завершатся задачи пула потоков
+//            List<Portal> portals = portalRepository.findAll();
+//            portals.forEach(portal -> {
+//                portal.setStatus(IndexStatus.FAILED);
+//                portal.setLastError("Индексация остановлена пользователем");
+//                portal.setStatusTime(new Date());
+//                portalRepository.save(portal);
+//            });
+//            response.setResult(this.pool.isShutdown());
+//            return response;
+//        }
     }
 
     @Override
@@ -135,7 +136,8 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public Integer getPoolSize() {
-        return this.pool.getPoolSize();
+//        return this.pool.getPoolSize();
+        return 11;
     }
 
     private IndexingResponse responseError(IndexingResponse response, String errorString) {

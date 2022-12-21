@@ -24,13 +24,11 @@ public class SiteLinker extends RecursiveAction {
                       String host,
                       Portal portal,
                       RepositoriesFactory repositories,
-                      ConnectionPerformance connectionPerformance,
-                      Boolean isParent) {
+                      ConnectionPerformance connectionPerformance) {
         this.repositories = repositories;
         this.connectionPerformance = connectionPerformance;
         this.pageDescription = new PageDescription(url, host, portal);
         this.link = new Link(pageDescription, repositories, connectionPerformance);
-        this.isParent = isParent;
     }
 
     @Override
@@ -49,8 +47,7 @@ public class SiteLinker extends RecursiveAction {
                     ,this.pageDescription.getHost()
                     ,this.pageDescription.getPortal()
                     ,this.repositories
-                    ,this.connectionPerformance
-                    ,false);
+                    ,this.connectionPerformance);
             task.fork();
             taskList.add(task);
         }

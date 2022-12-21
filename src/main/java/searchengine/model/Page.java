@@ -15,7 +15,7 @@ public class Page {
     @JoinColumn(name = "site_id", nullable = false)
     private Portal portal;
 
-    @Column(name = "path", columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT NOT NULL, UNIQUE KEY unique_page_index (site_id,path(255))")
     private String path;
 
     @Column(nullable = false)
