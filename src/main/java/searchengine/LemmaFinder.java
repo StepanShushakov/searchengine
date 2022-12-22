@@ -97,7 +97,7 @@ public class LemmaFinder {
 
     private String[] arrayContainsRussianWords(String text) {
         return text.toLowerCase(Locale.ROOT)
-                .replaceAll("([^а-я\\s])", " ")
+                .replaceAll("([^а-яё\\s])", " ")
                 .trim()
                 .split("\\s+");
     }

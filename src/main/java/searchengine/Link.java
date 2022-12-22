@@ -10,6 +10,7 @@ import searchengine.model.Portal;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,10 +54,18 @@ public class Link {
                     .get();
             page.setCode(doc.connection().response().statusCode());
         } catch (IOException e) {
-            page.setCode(((HttpStatusException) e).getStatusCode());
-            page.setContent(e.toString());
-            portal.setLastError(e.toString());
-            savePage(page);
+            try {
+                page.setCode(((HttpStatusException) e).getStatusCode());
+                page.setContent(e.toString());
+                portal.setLastError(e.toString());
+                savePage(page);
+            } catch (Exception ex) {
+                page.setCode(0);
+                page.setContent(ex.toString());
+                portal.setLastError(ex.toString());
+                savePage(page);
+            }
+
         }
         if (doc == null) return;
         page.setContent(doc.toString());

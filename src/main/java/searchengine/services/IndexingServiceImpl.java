@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -75,12 +76,13 @@ public class IndexingServiceImpl implements IndexingService {
                 if (this.pool.isShutdown()) {
                     this.pool = new ForkJoinPool();
                 }
-                this.pool.submit(new SiteLinker(newPortal.getUrl()
+                ForkJoinTask<Void> parentTask = this.pool.submit(new SiteLinker(newPortal.getUrl()
                         , new URL(portalLink).getHost().replaceAll("^www.", "")
                         , newPortal
                         , new RepositoriesFactory(portalRepository, pageRepository)
                         , new ConnectionPerformance(userAgent, referrer)
                         , true));
+                parentTask.join();
             } catch (MalformedURLException e) {
                 newPortal.setStatusTime(new Date());
                 newPortal.setStatus(IndexStatus.FAILED);

@@ -60,19 +60,18 @@ public class SiteLinker extends RecursiveAction {
                             + " url: "+ task.getPageDescription().getUrl()
                             + " parent: " + task.isParent());
             task.join();
-            if (task.isParent()) {
-                Portal portal = task.getPageDescription().getPortal();
-                portal.setStatus(IndexStatus.INDEXED);
-                portal.setStatusTime(new Date());
-                task.getRepositories().getPortalRepository().save(portal);
-            }
+//            if (task.isParent()) {
+//                Portal portal = task.getPageDescription().getPortal();
+//                portal.setStatus(IndexStatus.INDEXED);
+//                portal.setStatusTime(new Date());
+//                task.getRepositories().getPortalRepository().save(portal);
+//            }
         }
         if (this.isParent) {
-            join();
-            Portal portal = getPageDescription().getPortal();
+            Portal portal = this.getPageDescription().getPortal();
             portal.setStatus(IndexStatus.INDEXED);
             portal.setStatusTime(new Date());
-            getRepositories().getPortalRepository().save(portal);
+            this.getRepositories().getPortalRepository().save(portal);
         }
 //        PortalRepository portalRepository = repositories.getPortalRepository();
 //        List<Portal> portals = portalRepository.findAll();

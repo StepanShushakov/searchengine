@@ -32,4 +32,4 @@ indexing-settings:
 
 jsoupFakePerformance:
   userAgent: GamaSearchEngine
-  referrer: http://www.google.com
+  referrer: http://www.searcher.mu
