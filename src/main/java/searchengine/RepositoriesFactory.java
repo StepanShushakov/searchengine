@@ -1,7 +1,7 @@
 package searchengine;
 
-import searchengine.model.PageRepository;
-import searchengine.model.PortalRepository;
+import searchengine.repositories.PageRepository;
+import searchengine.repositories.PortalRepository;
 
 public class RepositoriesFactory {
     private PortalRepository portalRepository;

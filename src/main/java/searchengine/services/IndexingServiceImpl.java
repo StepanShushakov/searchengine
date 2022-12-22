@@ -9,6 +9,8 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.model.*;
+import searchengine.repositories.PageRepository;
+import searchengine.repositories.PortalRepository;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -32,23 +34,17 @@ public class IndexingServiceImpl implements IndexingService {
     private PortalRepository portalRepository;
     @Autowired
     private PageRepository pageRepository;
-
     private ForkJoinPool pool = new ForkJoinPool();
-
     @Value("${jsoupFakePerformance.userAgent}")
     private String userAgent;
     @Value("${jsoupFakePerformance.referrer}")
     private String referrer;
-
     @Value("${spring.datasource.username}")
     private String DBUserName;
-
     @Value("${spring.datasource.password}")
     private String DBPassword;
-
     @Value("${spring.datasource.url}")
     private String DBUrl;
-
     private Connection connection;
     private Statement statement;
 
