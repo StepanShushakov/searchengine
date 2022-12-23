@@ -18,12 +18,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Service
 @RequiredArgsConstructor
@@ -32,10 +29,9 @@ public class IndexingServiceImpl implements IndexingService {
     private final SitesList sites;
 
     @Autowired
-    private PortalRepository portalRepository;
+    private final PortalRepository portalRepository;
     @Autowired
-    private PageRepository pageRepository;
-    private ForkJoinPool pool = new ForkJoinPool();
+    private final PageRepository pageRepository;
     @Value("${jsoupFakePerformance.userAgent}")
     private String userAgent;
     @Value("${jsoupFakePerformance.referrer}")
@@ -52,37 +48,28 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse startIndexing() {
         IndexingResponse response = new IndexingResponse();
-        ArrayList<PortalDescription> portals = new ArrayList<>();
-        for (Site site: sites.getSites()) {
+        if (getPoolSize() > 0) return responseError(response, "Индексация уже запущена");
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        for (Site site : sites.getSites()) {
             Portal portal = portalRepository.findByNameAndUrl(site.getName(), site.getUrl());
-            if (portal != null && portal.getStatus() == IndexStatus.INDEXING)
-                return responseError(response, "Индексация уже запущена");
-            else portals.add(new PortalDescription(portal, site.getName(), site.getUrl()));
-        }
-        for (PortalDescription portalDescription : portals) {
-            Portal portal = portalDescription.getPortal();
             if (portal != null) {
                 deletePagesByPortal(portal);
                 portalRepository.delete(portal);
             }
             Portal newPortal = new Portal();
-            newPortal.setName(portalDescription.getName());
-            String portalLink = portalDescription.getUrl();
+            newPortal.setName(site.getName());
+            String portalLink = site.getUrl();
             newPortal.setUrl(portalLink);
             newPortal.setStatus(IndexStatus.INDEXING);
             newPortal.setStatusTime(new Date());
             portalRepository.save(newPortal);
             try {
-                if (this.pool.isShutdown()) {
-                    this.pool = new ForkJoinPool();
-                }
-                ForkJoinTask<Void> parentTask = this.pool.submit(new SiteLinker(newPortal.getUrl()
+                executor.submit(new CrawlManager(newPortal.getUrl()
                         , new URL(portalLink).getHost().replaceAll("^www.", "")
                         , newPortal
                         , new RepositoriesFactory(portalRepository, pageRepository)
                         , new ConnectionPerformance(userAgent, referrer)
                         , true));
-                parentTask.join();
             } catch (MalformedURLException e) {
                 newPortal.setStatusTime(new Date());
                 newPortal.setStatus(IndexStatus.FAILED);
@@ -91,7 +78,7 @@ public class IndexingServiceImpl implements IndexingService {
             }
         }
         closeStatementConnection();
-        this.pool.shutdown();
+        executor.shutdown();
         response.setResult(true);
         return response;
     }
@@ -99,18 +86,19 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse stopIndexing() {
         IndexingResponse response = new IndexingResponse();
-        if (this.pool.getPoolSize() == 0)
+        ForkJoinPool pool = CrawlManager.getPool();
+        if (pool.getPoolSize() == 0)
             return responseError(response, "Индексация не запущена");
         else {
             SiteLinker.setStopCrawling(true);
             pool.shutdown();
             try {
-                if ((!pool.awaitTermination(800, TimeUnit.MILLISECONDS)))
-                pool.shutdownNow();
+                if ((!pool.awaitTermination(800, TimeUnit.MILLISECONDS))) pool.shutdownNow();
             } catch (InterruptedException e) {
                 pool.shutdownNow();
             }
-            while (pool.getPoolSize() > 0) {};  //подождем, пока завершатся задачи пула потоков
+
+            while (pool.getPoolSize() > 0);  //подождем, пока завершатся задачи пула потоков
             List<Portal> portals = portalRepository.findAll();
             portals.forEach(portal -> {
                 portal.setStatus(IndexStatus.FAILED);
@@ -118,7 +106,7 @@ public class IndexingServiceImpl implements IndexingService {
                 portal.setStatusTime(new Date());
                 portalRepository.save(portal);
             });
-            response.setResult(this.pool.isShutdown());
+            response.setResult(pool.isShutdown());
             return response;
         }
     }
@@ -130,7 +118,7 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public Integer getPoolSize() {
-        return this.pool.getPoolSize();
+        return CrawlManager.getPoolSize();
     }
 
     private IndexingResponse responseError(IndexingResponse response, String errorString) {
@@ -152,7 +140,7 @@ public class IndexingServiceImpl implements IndexingService {
         try {
             if (this.connection == null ||
                     this.connection.isClosed()) {
-                this.connection = (Connection) DriverManager.getConnection(DBUrl, DBUserName, DBPassword);
+                this.connection = DriverManager.getConnection(DBUrl, DBUserName, DBPassword);
                 this.statement = connection.createStatement();
             }
             this.statement.execute("delete from page where site_id = " + portal.getId());

@@ -12,13 +12,13 @@ import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
 public class SiteLinker extends RecursiveAction {
-    private PageDescription pageDescription;
-    private Link link;
-    private RepositoriesFactory repositories;
-    private ConnectionPerformance connectionPerformance;
+    private final PageDescription pageDescription;
+    private final Link link;
+    private final RepositoriesFactory repositories;
+    private final ConnectionPerformance connectionPerformance;
     private static Boolean stopCrawling = false;
 
-    private Boolean isParent;
+    private final Boolean isParent;
 
     public SiteLinker(String url,
                       String host,
@@ -42,15 +42,14 @@ public class SiteLinker extends RecursiveAction {
                         + " parent: " + this.isParent);
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
-        for (int i = 0; i < childrenLinks.size(); i++) {
-            String link = childrenLinks.get(i);
+        for (String link : childrenLinks) {
             if (linkIsAdded(link)) continue;
             SiteLinker task = new SiteLinker(link
-                    ,this.pageDescription.getHost()
-                    ,this.pageDescription.getPortal()
-                    ,this.repositories
-                    ,this.connectionPerformance
-                    ,false);
+                    , this.pageDescription.getHost()
+                    , this.pageDescription.getPortal()
+                    , this.repositories
+                    , this.connectionPerformance
+                    , false);
             task.fork();
             taskList.add(task);
         }
@@ -60,12 +59,6 @@ public class SiteLinker extends RecursiveAction {
                             + " url: "+ task.getPageDescription().getUrl()
                             + " parent: " + task.isParent());
             task.join();
-//            if (task.isParent()) {
-//                Portal portal = task.getPageDescription().getPortal();
-//                portal.setStatus(IndexStatus.INDEXED);
-//                portal.setStatusTime(new Date());
-//                task.getRepositories().getPortalRepository().save(portal);
-//            }
         }
         if (this.isParent) {
             Portal portal = this.getPageDescription().getPortal();
@@ -73,13 +66,6 @@ public class SiteLinker extends RecursiveAction {
             portal.setStatusTime(new Date());
             this.getRepositories().getPortalRepository().save(portal);
         }
-//        PortalRepository portalRepository = repositories.getPortalRepository();
-//        List<Portal> portals = portalRepository.findAll();
-//        portals.forEach(portal -> {
-//            portal.setStatus(IndexStatus.INDEXED);
-//            portal.setStatusTime(new Date());
-//            portalRepository.save(portal);
-//        });
     }
 
     private boolean isParent() {
@@ -99,7 +85,7 @@ public class SiteLinker extends RecursiveAction {
     }
 
     private boolean linkIsAdded(String link) {
-        String path = "";
+        String path;
         try {
             path = new URL(link).getPath();
             if (path.isEmpty()) path = "/";
