@@ -5,7 +5,7 @@ import searchengine.model.Portal;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 
-public class CrawlManager implements Runnable{
+public class CrawlStarter implements Runnable{
     private static final ForkJoinPool pool = new ForkJoinPool();
 
     private final String url;
@@ -15,7 +15,7 @@ public class CrawlManager implements Runnable{
     ConnectionPerformance connectionPerformance;
     private final boolean isParent;
 
-    public CrawlManager(String url,
+    public CrawlStarter(String url,
                         String host,
                         Portal portal,
                         RepositoriesFactory repositoriesFactory,
@@ -35,7 +35,12 @@ public class CrawlManager implements Runnable{
 
     @Override
     public void run() {
-        ForkJoinTask<Void> parentTask = pool.submit(new SiteLinker(url, host, portal, repositoriesFactory, connectionPerformance, isParent));
+        ForkJoinTask<Void> parentTask = pool.submit(new SiteLinker(url,
+                                                                    host,
+                                                                    portal,
+                                                                    repositoriesFactory,
+                                                                    connectionPerformance,
+                                                                    isParent));
         parentTask.join();
     }
 

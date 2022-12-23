@@ -64,7 +64,7 @@ public class IndexingServiceImpl implements IndexingService {
             newPortal.setStatusTime(new Date());
             portalRepository.save(newPortal);
             try {
-                executor.submit(new CrawlManager(newPortal.getUrl()
+                executor.submit(new CrawlStarter(newPortal.getUrl()
                         , new URL(portalLink).getHost().replaceAll("^www.", "")
                         , newPortal
                         , new RepositoriesFactory(portalRepository, pageRepository)
@@ -86,7 +86,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse stopIndexing() {
         IndexingResponse response = new IndexingResponse();
-        ForkJoinPool pool = CrawlManager.getPool();
+        ForkJoinPool pool = CrawlStarter.getPool();
         if (pool.getPoolSize() == 0)
             return responseError(response, "Индексация не запущена");
         else {
@@ -118,7 +118,7 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public Integer getPoolSize() {
-        return CrawlManager.getPoolSize();
+        return CrawlStarter.getPoolSize();
     }
 
     private IndexingResponse responseError(IndexingResponse response, String errorString) {
