@@ -111,4 +111,7 @@ public class LemmaFinder {
         }
         return true;
     }
+    private String deleteHtmlTags(String text) {
+        return text.replaceAll("<[^>]+>", "");
+    }
 }

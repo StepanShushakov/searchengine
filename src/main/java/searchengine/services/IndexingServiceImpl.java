@@ -11,6 +11,7 @@ import searchengine.dto.indexing.IndexingResponse;
 import searchengine.model.*;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.PortalRepository;
+import searchengine.response.IndexPage;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -109,6 +110,11 @@ public class IndexingServiceImpl implements IndexingService {
             response.setResult(pool.isShutdown());
             return response;
         }
+    }
+
+    public IndexingResponse indexPage(IndexPage indexPage){
+        IndexingResponse response = new IndexingResponse();
+        return response;
     }
 
     @Override
