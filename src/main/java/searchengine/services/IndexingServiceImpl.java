@@ -13,6 +13,7 @@ import searchengine.repositories.PageRepository;
 import searchengine.repositories.PortalRepository;
 import searchengine.response.IndexPage;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
@@ -52,21 +53,16 @@ public class IndexingServiceImpl implements IndexingService {
         if (getPoolSize() > 0) return responseError(response, "Индексация уже запущена");
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (Site site : sites.getSites()) {
-            Portal portal = portalRepository.findByNameAndUrl(site.getName(), site.getUrl());
+            String portalUrl = site.getUrl();
+            Portal portal = portalRepository.findByUrl(portalUrl);
             if (portal != null) {
                 deletePagesByPortal(portal);
                 portalRepository.delete(portal);
             }
-            Portal newPortal = new Portal();
-            newPortal.setName(site.getName());
-            String portalLink = site.getUrl();
-            newPortal.setUrl(portalLink);
-            newPortal.setStatus(IndexStatus.INDEXING);
-            newPortal.setStatusTime(new Date());
-            portalRepository.save(newPortal);
+            Portal newPortal = createPortalBySite(site, portalUrl);
             try {
                 executor.submit(new CrawlStarter(newPortal.getUrl()
-                        , new URL(portalLink).getHost().replaceAll("^www.", "")
+                        , new URL(portalUrl).getHost()
                         , newPortal
                         , new RepositoriesFactory(portalRepository, pageRepository)
                         , new ConnectionPerformance(userAgent, referrer)
@@ -82,6 +78,16 @@ public class IndexingServiceImpl implements IndexingService {
         executor.shutdown();
         response.setResult(true);
         return response;
+    }
+
+    private Portal createPortalBySite(Site site, String portalUrl) {
+        Portal newPortal = new Portal();
+        newPortal.setName(site.getName());
+        newPortal.setUrl(portalUrl);
+        newPortal.setStatus(IndexStatus.INDEXING);
+        newPortal.setStatusTime(new Date());
+        portalRepository.save(newPortal);
+        return newPortal;
     }
 
     @Override
@@ -114,6 +120,46 @@ public class IndexingServiceImpl implements IndexingService {
 
     public IndexingResponse indexPage(IndexPage indexPage){
         IndexingResponse response = new IndexingResponse();
+        URL url = null;
+        try {
+            url = indexPage.getUrl();
+        } catch (MalformedURLException e) {
+            return responseError(response, e.toString());
+        }
+        String portalUrl = url.getProtocol() + "://" + url.getHost().replaceAll("^www.", "");
+        Portal portal = portalRepository.findByUrl(portalUrl);
+        if (portal == null) {
+            Portal newPortal = null;
+            for (Site site: sites.getSites()) {
+                if (site.getUrl().equals(portalUrl)) {
+                    newPortal = createPortalBySite(site, portalUrl);
+                    break;
+                }
+            }
+            if (newPortal == null) {
+                return responseError(response, "Данная страница находится за пределами сайтов,\n" +
+                        "указанных в конфигурационном файле");
+            }
+            portal = newPortal;
+        }
+
+        List<Page> pages = pageRepository.findByPortalAndPath(portal, url.getPath());
+
+        if (pages.size() == 0) {
+            Link link = new Link(new PageDescription(url.getProtocol() + "://" + url.getHost() + url.getPath()
+                                                        ,url.getHost()
+                                                        ,portal)
+                                    ,new RepositoriesFactory(this.portalRepository, this.pageRepository)
+                                    ,new ConnectionPerformance(this.userAgent, this.referrer));
+        } else {
+            for (Page page: pages) {
+                try {
+                    Link.indexPage(page);
+                } catch (IOException e) {
+                    return responseError(response, e.toString());
+                }
+            }
+        }
         return response;
     }
 

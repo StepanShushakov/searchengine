@@ -10,10 +10,11 @@ import searchengine.model.Portal;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -70,6 +71,11 @@ public class Link {
         if (doc == null) return;
         page.setContent(doc.toString());
         savePage(page);
+        try {
+            indexPage(page);
+        } catch (IOException e) {
+//            throw new RuntimeException(e);
+        }
         Elements elements = doc.select("a");
         if (elements.size() > 0) {
             elements.forEach(element -> {
@@ -111,5 +117,15 @@ public class Link {
 
     private boolean linkIsAdded(Portal portal, String path) {
         return repositories.getPageRepository().findByPortalAndPath(portal, path).size() != 0;
+    }
+
+    public static void indexPage(Page page) throws IOException {
+        String text = page.getContent();
+        Map<String, Integer> lemmas = LemmaFinder
+                                        .getInstance()
+                                        .collectLemmas(text.replaceAll("<[^>]+>", ""));
+        lemmas.forEach((lemma, count) -> {
+           Logger.getLogger(Link.class.getName()).info(page.getPath() + ": " + lemma + " " + count);
+        });
     }
 }

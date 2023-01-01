@@ -10,4 +10,6 @@ import searchengine.model.Portal;
 public interface PortalRepository extends JpaRepository<Portal, Integer> {
     @Query("select p from Portal p where p.name = ?1 and p.url = ?2")
     Portal findByNameAndUrl(@NonNull String name, @NonNull String url);
+
+    Portal findByUrl(String s);
 }
