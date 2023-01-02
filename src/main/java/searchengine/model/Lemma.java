@@ -23,6 +23,10 @@ public class Lemma {
     @OneToOne(mappedBy = "lemma")
     private IndexEntity index;
 
+    @Column
+    private String word;
+
+
     public int getId() {
         return id;
     }
@@ -53,5 +57,13 @@ public class Lemma {
 
     public void setFrequency(int frequency) {
         this.frequency = frequency;
+    }
+
+    public String getWord() {
+        return word;
+    }
+
+    public void setWord(String word) {
+        this.word = word;
     }
 }

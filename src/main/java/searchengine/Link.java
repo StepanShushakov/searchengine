@@ -5,12 +5,13 @@ import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import searchengine.model.IndexEntity;
 import searchengine.model.Lemma;
 import searchengine.model.Page;
 import searchengine.model.Portal;
 import searchengine.records.ConnectionPerformance;
+import searchengine.records.PageDescription;
 import searchengine.records.RepositoriesFactory;
-import searchengine.repositories.LemmaRepository;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -39,21 +40,21 @@ public class Link {
         this.repositories = repositories;
         String pagePath = "";
         try {
-            pagePath = new URL(pageDescription.getUrl()).getPath();
+            pagePath = new URL(pageDescription.url()).getPath();
         } catch (MalformedURLException e) {
             //throw new RuntimeException(e);
         }
         Page page = new Page();
-        Portal portal = pageDescription.getPortal();
+        Portal portal = pageDescription.portal();
         page.setPortal(portal);
         page.setPath(pagePath.isEmpty() ? "/" : pagePath);
-        if (linkIsAdded(pageDescription.getPortal(), pagePath)) return;
+        if (linkIsAdded(pageDescription.portal(), pagePath)) return;
         Uninterruptibles.sleepUninterruptibly(rnd(500, 5000), TimeUnit.MILLISECONDS);
         this.pageDescription = pageDescription;
         this.connectionPerformance = connectionPerformance;
         Document doc = null;
         try {
-            doc = Jsoup.connect(pageDescription.getUrl())
+            doc = Jsoup.connect(pageDescription.url())
                     .userAgent(connectionPerformance.userAgent())
                     .referrer(connectionPerformance.referrer())
                     .get();
@@ -76,9 +77,9 @@ public class Link {
         page.setContent(doc.toString());
         savePage(page);
         try {
-            indexPage(page, repositories.lemmaRepository(), true);
+            indexPage(page, repositories, true);
         } catch (IOException e) {
-//            throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
         Elements elements = doc.select("a");
         if (elements.size() > 0) {
@@ -95,7 +96,7 @@ public class Link {
     private boolean linkIsCorrect(String childrenLink) {
         try {
             return new URL(childrenLink).getHost().replaceAll("^www.", "")
-                    .equals(this.pageDescription.getHost());
+                    .equals(this.pageDescription.host());
         } catch (MalformedURLException e) {
             //throw new RuntimeException(e);
             Logger.getLogger(Link.class.getName()).info("catch at url pulling: " + e);
@@ -123,24 +124,38 @@ public class Link {
         return repositories.pageRepository().findByPortalAndPath(portal, path).size() != 0;
     }
 
-    public static void indexPage(Page page, LemmaRepository lemmaRepository, Boolean isNew) throws IOException {
+    public static void indexPage(Page page, RepositoriesFactory repositories, Boolean isNew) throws IOException {
         String text = page.getContent();
-        Map<String, Integer> lemmas = LemmaFinder
+        Map<String, /*Integer*/ ArrayList<String>> lemmas = LemmaFinder
                                         .getInstance()
                                         .collectLemmas(text.replaceAll("<[^>]+>", ""));
-        lemmas.forEach((lemma, count) -> {
-           Logger.getLogger(Link.class.getName()).info(page.getPath() + ": " + lemma + " " + count);
-           List<Lemma> lemmasList = lemmaRepository.findByPortalAndLemma(page.getPortal(), lemma);
-            Lemma lemmaRecord = null;
-           if (lemmasList.size() == 0) {
+        lemmas.forEach((lemma, words) -> {
+//           Logger.getLogger(Link.class.getName()).info(page.getPath() + ": " + lemma + " " + words.size());
+           List<Lemma> lemmasList = repositories.lemmaRepository().findByPortalAndLemma(page.getPortal(), lemma);
+           Lemma lemmaRecord = null;
+            String stringWords = words.toString().replace("[", "").replace("]", "");
+            if (lemmasList.size() == 0) {
                lemmaRecord = new Lemma();
                lemmaRecord.setPortal(page.getPortal());
+               lemmaRecord.setWord(stringWords);
            } else {
                lemmaRecord = lemmasList.get(0);
+               lemmaRecord.setWord(lemmaRecord.getWord()
+                       + ", "
+                       + stringWords);
            };
            lemmaRecord.setLemma(lemma);
+
            if (isNew) lemmaRecord.setFrequency(lemmaRecord.getFrequency() + 1);
-           lemmaRepository.save(lemmaRecord);
+           repositories.lemmaRepository().save(lemmaRecord);
+           List<IndexEntity> indexes = repositories.indexRepository().findByPageAndLemma(page, lemmaRecord);
+           IndexEntity index = null;
+           if (indexes.size() != 0) index = indexes.get(0);
+           else index = new IndexEntity();
+           index.setPage(page);
+           index.setLemma(lemmaRecord);
+           index.setRank(words.size());
+           repositories.indexRepository().save(index);
         });
     }
 }

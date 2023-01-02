@@ -10,7 +10,9 @@ import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.model.*;
 import searchengine.records.ConnectionPerformance;
+import searchengine.records.PageDescription;
 import searchengine.records.RepositoriesFactory;
+import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.PortalRepository;
@@ -39,6 +41,8 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     @Autowired
     private final LemmaRepository lemmaRepository;
+    @Autowired
+    private final IndexRepository indexRepository;
     @Value("${jsoupFakePerformance.userAgent}")
     private String userAgent;
     @Value("${jsoupFakePerformance.referrer}")
@@ -61,7 +65,7 @@ public class IndexingServiceImpl implements IndexingService {
             String portalUrl = site.getUrl();
             Portal portal = portalRepository.findByUrl(portalUrl);
             if (portal != null) {
-                deletePagesByPortal(portal);
+                deletePortalPages(portal);
                 portalRepository.delete(portal);
             }
             Portal newPortal = createPortalBySite(site, portalUrl);
@@ -69,7 +73,7 @@ public class IndexingServiceImpl implements IndexingService {
                 executor.submit(new CrawlStarter(newPortal.getUrl()
                         , new URL(portalUrl).getHost()
                         , newPortal
-                        , new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository)
+                        , new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository, indexRepository)
                         , new ConnectionPerformance(userAgent, referrer)
                         , true));
             } catch (MalformedURLException e) {
@@ -154,12 +158,15 @@ public class IndexingServiceImpl implements IndexingService {
             Link link = new Link(new PageDescription(url.getProtocol() + "://" + url.getHost() + url.getPath()
                                                         ,url.getHost()
                                                         ,portal)
-                                    ,new RepositoriesFactory(this.portalRepository, this.pageRepository, this.lemmaRepository)
-                                    ,new ConnectionPerformance(this.userAgent, this.referrer));
+                        ,new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository, indexRepository)
+                        ,new ConnectionPerformance(this.userAgent, this.referrer)
+            );
         } else {
             for (Page page: pages) {
                 try {
-                    Link.indexPage(page, lemmaRepository, false);
+                    Link.indexPage(page
+                    ,new RepositoriesFactory(null, null, lemmaRepository, indexRepository)
+                    ,false);
                 } catch (IOException e) {
                     return responseError(response, e.toString());
                 }
@@ -193,13 +200,15 @@ public class IndexingServiceImpl implements IndexingService {
         }
     }
 
-    private void deletePagesByPortal(Portal portal) {
+    private void deletePortalPages(Portal portal) {
         try {
             if (this.connection == null ||
                     this.connection.isClosed()) {
                 this.connection = DriverManager.getConnection(DBUrl, DBUserName, DBPassword);
                 this.statement = connection.createStatement();
             }
+            this.statement.execute( "delete from `index` where page_id in " +
+                    "(select id from page where site_id = " + portal.getId() + ")");
             this.statement.execute("delete from page where site_id = " + portal.getId());
         } catch (SQLException e) {
             throw new RuntimeException(e);

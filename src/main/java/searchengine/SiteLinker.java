@@ -3,6 +3,7 @@ package searchengine;
 import searchengine.model.IndexStatus;
 import searchengine.model.Portal;
 import searchengine.records.ConnectionPerformance;
+import searchengine.records.PageDescription;
 import searchengine.records.RepositoriesFactory;
 
 import java.net.MalformedURLException;
@@ -40,15 +41,15 @@ public class SiteLinker extends RecursiveAction {
         if (stopCrawling) return;
         Logger.getLogger(SiteLinker.class.getName())
                 .info("Compute method. Thread: " + Thread.currentThread().getName()
-                        + " url: " + this.pageDescription.getUrl()
+                        + " url: " + this.pageDescription.url()
                         + " parent: " + this.isParent);
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (String link : childrenLinks) {
             if (linkIsAdded(link)) continue;
             SiteLinker task = new SiteLinker(link
-                    , this.pageDescription.getHost()
-                    , this.pageDescription.getPortal()
+                    , this.pageDescription.host()
+                    , this.pageDescription.portal()
                     , this.repositories
                     , this.connectionPerformance
                     , false);
@@ -58,12 +59,12 @@ public class SiteLinker extends RecursiveAction {
         for (SiteLinker task : taskList) {
             Logger.getLogger(SiteLinker.class.getName())
                     .info("join Thread: " + Thread.currentThread().getName()
-                            + " url: "+ task.getPageDescription().getUrl()
+                            + " url: "+ task.getPageDescription().url()
                             + " parent: " + task.isParent());
             task.join();
         }
         if (this.isParent) {
-            Portal portal = this.getPageDescription().getPortal();
+            Portal portal = this.getPageDescription().portal();
             portal.setStatus(IndexStatus.INDEXED);
             portal.setStatusTime(new Date());
             this.getRepositories().portalRepository().save(portal);
@@ -96,6 +97,6 @@ public class SiteLinker extends RecursiveAction {
             // что страница уже добавлена,
             // что бы не пытаться её разбирать
         }
-        return repositories.pageRepository().findByPortalAndPath(this.pageDescription.getPortal(), path).size() != 0;
+        return repositories.pageRepository().findByPortalAndPath(this.pageDescription.portal(), path).size() != 0;
     }
 }

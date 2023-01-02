@@ -10,7 +10,7 @@ public class LemmaFinder {
 
     private final LuceneMorphology luceneMorphology;
     private static final String WORD_TYPE_REGEX = "\\W\\w&&[^а-яА-Я\\s]";
-    private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ"};
+    private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ", "ЧАСТ"};
 
     public static LemmaFinder getInstance() throws IOException {
         LuceneMorphology morphology= new RussianLuceneMorphology();
@@ -31,12 +31,13 @@ public class LemmaFinder {
      * @param text текст из которого будут выбираться леммы
      * @return ключ является леммой, а значение количеством найденных лемм
      */
-    public Map<String, Integer> collectLemmas(String text) {
+    public Map<String, /*Integer*/ ArrayList<String>> collectLemmas(String text) {
         String[] words = arrayContainsRussianWords(text);
-        HashMap<String, Integer> lemmas = new HashMap<>();
+        HashMap<String, /*Integer*/ ArrayList<String>> lemmas = new HashMap<>();
 
         for (String word : words) {
-            if (word.isBlank()) {
+            if (word.isBlank()
+                || (word.length() == 1 && !word.toLowerCase().equals("я"))){
                 continue;
             }
 
@@ -53,9 +54,11 @@ public class LemmaFinder {
             String normalWord = normalForms.get(0);
 
             if (lemmas.containsKey(normalWord)) {
-                lemmas.put(normalWord, lemmas.get(normalWord) + 1);
+                /*lemmas.put(normalWord, lemmas.get(normalWord) + 1);*/
+                lemmas.get(normalWord).add(word);
             } else {
-                lemmas.put(normalWord, 1);
+                /*lemmas.put(normalWord, 1);*/
+                lemmas.put(normalWord, new ArrayList<>(Arrays.asList(word)));
             }
         }
 

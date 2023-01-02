@@ -19,12 +19,10 @@ spring:
 
 indexing-settings:
   sites:
-    - url: http://info.cern.ch
-      name: http://info.cern.ch - home of the first website
 #    - url: https://www.lenta.ru
 #      name: Лента.ру
-    - url: https://www.skillbox.ru
-      name: Skillbox
+#    - url: https://www.skillbox.ru
+#      name: Skillbox
 #    - url: https://www.playback.ru
 #      name: PlayBack.Ru
 #    - url: http://localhost:8080
