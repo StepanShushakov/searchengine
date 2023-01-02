@@ -5,15 +5,19 @@ import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import searchengine.model.Lemma;
 import searchengine.model.Page;
 import searchengine.model.Portal;
+import searchengine.records.ConnectionPerformance;
+import searchengine.records.RepositoriesFactory;
+import searchengine.repositories.LemmaRepository;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -50,8 +54,8 @@ public class Link {
         Document doc = null;
         try {
             doc = Jsoup.connect(pageDescription.getUrl())
-                    .userAgent(connectionPerformance.getUserAgent())
-                    .referrer(connectionPerformance.getReferrer())
+                    .userAgent(connectionPerformance.userAgent())
+                    .referrer(connectionPerformance.referrer())
                     .get();
             page.setCode(doc.connection().response().statusCode());
         } catch (IOException e) {
@@ -72,7 +76,7 @@ public class Link {
         page.setContent(doc.toString());
         savePage(page);
         try {
-            indexPage(page);
+            indexPage(page, repositories.lemmaRepository(), true);
         } catch (IOException e) {
 //            throw new RuntimeException(e);
         }
@@ -106,26 +110,37 @@ public class Link {
     private void savePage(Page page) {
         Portal portal = page.getPortal();
         if (linkIsAdded(portal, page.getPath())) return;
-        repositories.getPageRepository().save(page);
+        repositories.pageRepository().save(page);
         savePortal(portal);
     }
 
     private void savePortal(Portal portal) {
         portal.setStatusTime(new Date());
-        repositories.getPortalRepository().save(portal);
+        repositories.portalRepository().save(portal);
     }
 
     private boolean linkIsAdded(Portal portal, String path) {
-        return repositories.getPageRepository().findByPortalAndPath(portal, path).size() != 0;
+        return repositories.pageRepository().findByPortalAndPath(portal, path).size() != 0;
     }
 
-    public static void indexPage(Page page) throws IOException {
+    public static void indexPage(Page page, LemmaRepository lemmaRepository, Boolean isNew) throws IOException {
         String text = page.getContent();
         Map<String, Integer> lemmas = LemmaFinder
                                         .getInstance()
                                         .collectLemmas(text.replaceAll("<[^>]+>", ""));
         lemmas.forEach((lemma, count) -> {
            Logger.getLogger(Link.class.getName()).info(page.getPath() + ": " + lemma + " " + count);
+           List<Lemma> lemmasList = lemmaRepository.findByPortalAndLemma(page.getPortal(), lemma);
+            Lemma lemmaRecord = null;
+           if (lemmasList.size() == 0) {
+               lemmaRecord = new Lemma();
+               lemmaRecord.setPortal(page.getPortal());
+           } else {
+               lemmaRecord = lemmasList.get(0);
+           };
+           lemmaRecord.setLemma(lemma);
+           if (isNew) lemmaRecord.setFrequency(lemmaRecord.getFrequency() + 1);
+           lemmaRepository.save(lemmaRecord);
         });
     }
 }

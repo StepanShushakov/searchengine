@@ -2,6 +2,8 @@ package searchengine;
 
 import searchengine.model.IndexStatus;
 import searchengine.model.Portal;
+import searchengine.records.ConnectionPerformance;
+import searchengine.records.RepositoriesFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -64,7 +66,7 @@ public class SiteLinker extends RecursiveAction {
             Portal portal = this.getPageDescription().getPortal();
             portal.setStatus(IndexStatus.INDEXED);
             portal.setStatusTime(new Date());
-            this.getRepositories().getPortalRepository().save(portal);
+            this.getRepositories().portalRepository().save(portal);
         }
     }
 
@@ -94,6 +96,6 @@ public class SiteLinker extends RecursiveAction {
             // что страница уже добавлена,
             // что бы не пытаться её разбирать
         }
-        return repositories.getPageRepository().findByPortalAndPath(this.pageDescription.getPortal(), path).size() != 0;
+        return repositories.pageRepository().findByPortalAndPath(this.pageDescription.getPortal(), path).size() != 0;
     }
 }

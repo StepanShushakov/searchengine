@@ -1,7 +1,6 @@
 package searchengine.services;
 
 import searchengine.dto.indexing.IndexingResponse;
-import searchengine.model.Page;
 import searchengine.response.IndexPage;
 
 public interface IndexingService {

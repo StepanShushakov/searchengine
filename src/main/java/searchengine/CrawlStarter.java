@@ -1,6 +1,8 @@
 package searchengine;
 
 import searchengine.model.Portal;
+import searchengine.records.ConnectionPerformance;
+import searchengine.records.RepositoriesFactory;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;

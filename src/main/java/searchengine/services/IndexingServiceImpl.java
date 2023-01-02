@@ -9,6 +9,9 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.model.*;
+import searchengine.records.ConnectionPerformance;
+import searchengine.records.RepositoriesFactory;
+import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.PortalRepository;
 import searchengine.response.IndexPage;
@@ -34,6 +37,8 @@ public class IndexingServiceImpl implements IndexingService {
     private final PortalRepository portalRepository;
     @Autowired
     private final PageRepository pageRepository;
+    @Autowired
+    private final LemmaRepository lemmaRepository;
     @Value("${jsoupFakePerformance.userAgent}")
     private String userAgent;
     @Value("${jsoupFakePerformance.referrer}")
@@ -64,7 +69,7 @@ public class IndexingServiceImpl implements IndexingService {
                 executor.submit(new CrawlStarter(newPortal.getUrl()
                         , new URL(portalUrl).getHost()
                         , newPortal
-                        , new RepositoriesFactory(portalRepository, pageRepository)
+                        , new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository)
                         , new ConnectionPerformance(userAgent, referrer)
                         , true));
             } catch (MalformedURLException e) {
@@ -149,12 +154,12 @@ public class IndexingServiceImpl implements IndexingService {
             Link link = new Link(new PageDescription(url.getProtocol() + "://" + url.getHost() + url.getPath()
                                                         ,url.getHost()
                                                         ,portal)
-                                    ,new RepositoriesFactory(this.portalRepository, this.pageRepository)
+                                    ,new RepositoriesFactory(this.portalRepository, this.pageRepository, this.lemmaRepository)
                                     ,new ConnectionPerformance(this.userAgent, this.referrer));
         } else {
             for (Page page: pages) {
                 try {
-                    Link.indexPage(page);
+                    Link.indexPage(page, lemmaRepository, false);
                 } catch (IOException e) {
                     return responseError(response, e.toString());
                 }
