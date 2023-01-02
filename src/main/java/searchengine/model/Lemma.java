@@ -1,6 +1,7 @@
 package searchengine.model;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 public class Lemma {
@@ -20,8 +21,8 @@ public class Lemma {
     @Column(nullable = false)
     private int frequency;
 
-    @OneToOne(mappedBy = "lemma")
-    private IndexEntity index;
+    @OneToMany(mappedBy = "lemma")
+    private List<IndexEntity> index;
 
     @Column
     private String word;

@@ -2,6 +2,7 @@ package searchengine.model;
 
 import javax.persistence.*;
 import javax.persistence.Index;
+import java.util.List;
 
 @Entity
 @Table(/*indexes = @Index(name="index_path", columnList = "path")*/)
@@ -24,8 +25,8 @@ public class Page {
     @Column(columnDefinition = "MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci COMMENT 'HTML-код страницы'", nullable = false)
     private String content;
 
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "page")
-    private IndexEntity index;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "page")
+    private List<IndexEntity> index;
 
     public int getId() {
         return id;
