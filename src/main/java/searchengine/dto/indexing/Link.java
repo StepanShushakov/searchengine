@@ -27,7 +27,7 @@ public class Link {
     private PageDescription pageDescription;
     private RepositoriesFactory repositories;
     private ConnectionPerformance connectionPerformance;
-    private ArrayList<String> childrenLinks = new ArrayList<>();
+    private final ArrayList<String> childrenLinks = new ArrayList<>();
 
     private static int rnd(int min, int max){
         max -= min;
@@ -108,7 +108,22 @@ public class Link {
                 && !childrenLink.endsWith(".jpg")
                 && !childrenLink.endsWith(".png")
                 && !childrenLink.endsWith(".jpeg")
-                && !childrenLink.endsWith(".bmp");
+                && !childrenLink.endsWith(".bmp")
+                && !childrenLink.endsWith(".txt")
+//                && !childrenLink.endsWith(".ps")
+//                && !childrenLink.endsWith(".wn")
+//                && !childrenLink.endsWith(".l")
+//                && !childrenLink.endsWith(".h")
+//                && !childrenLink.endsWith(".dtd")
+//                && !childrenLink.endsWith(".pl")
+//                && !childrenLink.endsWith(".c")
+//                && !childrenLink.endsWith(".sed")
+//                && !childrenLink.endsWith(".app")
+//                && !childrenLink.endsWith(".draw")
+//                && !childrenLink.endsWith(".tex")
+//                && !childrenLink.endsWith(".edu")
+//                && !childrenLink.endsWith(".jp")
+                ;
     }
 
     public ArrayList<String> getChildrenLinks() {

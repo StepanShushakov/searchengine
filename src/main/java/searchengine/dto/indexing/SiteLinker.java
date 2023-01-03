@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 
 public class SiteLinker extends RecursiveAction {
     private final PageDescription pageDescription;
@@ -20,7 +20,6 @@ public class SiteLinker extends RecursiveAction {
     private final RepositoriesFactory repositories;
     private final ConnectionPerformance connectionPerformance;
     private static Boolean stopCrawling = false;
-
     private final Boolean isParent;
 
     public SiteLinker(String url,
@@ -39,10 +38,10 @@ public class SiteLinker extends RecursiveAction {
     @Override
     protected void compute() {
         if (stopCrawling) return;
-        Logger.getLogger(SiteLinker.class.getName())
-                .info("Compute method. Thread: " + Thread.currentThread().getName()
-                        + " url: " + this.pageDescription.url()
-                        + " parent: " + this.isParent);
+//        Logger.getLogger(SiteLinker.class.getName())
+//                .info("Compute method. Thread: " + Thread.currentThread().getName()
+//                        + " url: " + this.pageDescription.url()
+//                        + " parent: " + this.isParent);
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (String link : childrenLinks) {
@@ -57,10 +56,10 @@ public class SiteLinker extends RecursiveAction {
             taskList.add(task);
         }
         for (SiteLinker task : taskList) {
-            Logger.getLogger(SiteLinker.class.getName())
-                    .info("join Thread: " + Thread.currentThread().getName()
-                            + " url: "+ task.getPageDescription().url()
-                            + " parent: " + task.isParent());
+//            Logger.getLogger(SiteLinker.class.getName())
+//                    .info("join Thread: " + Thread.currentThread().getName()
+//                            + " url: "+ task.getPageDescription().url()
+//                            + " parent: " + task.isParent());
             task.join();
         }
         if (this.isParent) {
@@ -69,10 +68,6 @@ public class SiteLinker extends RecursiveAction {
             portal.setStatusTime(new Date());
             this.getRepositories().portalRepository().save(portal);
         }
-    }
-
-    private boolean isParent() {
-        return this.isParent;
     }
 
     public PageDescription getPageDescription() {
