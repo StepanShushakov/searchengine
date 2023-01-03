@@ -1,4 +1,4 @@
-package searchengine;
+package searchengine.dto.indexing;
 
 import com.google.common.util.concurrent.Uninterruptibles;
 import org.jsoup.HttpStatusException;
@@ -86,7 +86,7 @@ public class Link {
             elements.forEach(element -> {
                 String childrenLink = element.attr("abs:href");
                 if (childrenLink.toLowerCase().startsWith("http")
-                    && linkIsCorrect(childrenLink)) {
+                    && linkIsCorrect(childrenLink.toLowerCase())) {
                     this.childrenLinks.add(childrenLink);
                 }
             });
@@ -94,14 +94,21 @@ public class Link {
     }
 
     private boolean linkIsCorrect(String childrenLink) {
+        boolean hostIsCorrect;
         try {
-            return new URL(childrenLink).getHost().replaceAll("^www.", "")
+            hostIsCorrect = new URL(childrenLink).getHost().replaceAll("^www.", "")
                     .equals(this.pageDescription.host());
         } catch (MalformedURLException e) {
             //throw new RuntimeException(e);
             Logger.getLogger(Link.class.getName()).info("catch at url pulling: " + e);
             return false;
         }
+        return hostIsCorrect
+                && !childrenLink.endsWith(".doc")
+                && !childrenLink.endsWith(".jpg")
+                && !childrenLink.endsWith(".png")
+                && !childrenLink.endsWith(".jpeg")
+                && !childrenLink.endsWith(".bmp");
     }
 
     public ArrayList<String> getChildrenLinks() {
@@ -132,7 +139,7 @@ public class Link {
         lemmas.forEach((lemma, words) -> {
 //           Logger.getLogger(Link.class.getName()).info(page.getPath() + ": " + lemma + " " + words.size());
            List<Lemma> lemmasList = repositories.lemmaRepository().findByPortalAndLemma(page.getPortal(), lemma);
-           Lemma lemmaRecord = null;
+           Lemma lemmaRecord;
             String stringWords = words.toString().replace("[", "").replace("]", "");
             if (lemmasList.size() == 0) {
                lemmaRecord = new Lemma();
@@ -143,13 +150,13 @@ public class Link {
                lemmaRecord.setWord(lemmaRecord.getWord()
                        + ", "
                        + stringWords);
-           };
-           lemmaRecord.setLemma(lemma);
+           }
+            lemmaRecord.setLemma(lemma);
 
            if (isNew) lemmaRecord.setFrequency(lemmaRecord.getFrequency() + 1);
            repositories.lemmaRepository().save(lemmaRecord);
            List<IndexEntity> indexes = repositories.indexRepository().findByPageAndLemma(page, lemmaRecord);
-           IndexEntity index = null;
+           IndexEntity index;
            if (indexes.size() != 0) index = indexes.get(0);
            else index = new IndexEntity();
            index.setPage(page);
@@ -157,5 +164,13 @@ public class Link {
            index.setRank(words.size());
            repositories.indexRepository().save(index);
         });
+    }
+
+    public static URL getUrlFromString(String string) throws MalformedURLException {
+        return new URL(string);
+    }
+
+    public static String getPortalMainUrl(URL url) {
+        return url.getProtocol() + "://" + url.getHost().replaceAll("^www.", "");
     }
 }

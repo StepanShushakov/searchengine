@@ -11,6 +11,8 @@ import java.util.List;
 
 @Repository
 public interface PageRepository extends JpaRepository<Page, Integer> {
+    @Query("select count(p) from Page p where p.portal = ?1 and p.code = 200")
+    int countByPortal(Portal portal);
     List<Page> findByPortalAndPath(@NonNull Portal portal, @NonNull String path);
     void deleteByPortal(Portal portal);
 }

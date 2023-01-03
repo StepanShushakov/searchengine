@@ -1,4 +1,4 @@
-package searchengine;
+package searchengine.dto.indexing;
 
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
@@ -37,7 +37,7 @@ public class LemmaFinder {
 
         for (String word : words) {
             if (word.isBlank()
-                || (word.length() == 1 && !word.toLowerCase().equals("я"))){
+                || (word.length() == 1 && !word.equalsIgnoreCase("я"))){
                 continue;
             }
 
@@ -58,7 +58,7 @@ public class LemmaFinder {
                 lemmas.get(normalWord).add(word);
             } else {
                 /*lemmas.put(normalWord, 1);*/
-                lemmas.put(normalWord, new ArrayList<>(Arrays.asList(word)));
+                lemmas.put(normalWord, new ArrayList<>(List.of(word)));
             }
         }
 
@@ -113,8 +113,5 @@ public class LemmaFinder {
             }
         }
         return true;
-    }
-    private String deleteHtmlTags(String text) {
-        return text.replaceAll("<[^>]+>", "");
     }
 }

@@ -11,6 +11,7 @@ import java.util.List;
 
 @Repository
 public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
+    int countByPortal(Portal portal);
     @Query("select l from Lemma l where l.portal = ?1 and l.lemma = ?2")
     List<Lemma> findByPortalAndLemma(@NonNull Portal portal, @NonNull String lemma);
 }

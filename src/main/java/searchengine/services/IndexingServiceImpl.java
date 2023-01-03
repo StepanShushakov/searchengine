@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import searchengine.*;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.dto.indexing.CrawlStarter;
 import searchengine.dto.indexing.IndexingResponse;
+import searchengine.dto.indexing.Link;
+import searchengine.dto.indexing.SiteLinker;
 import searchengine.model.*;
 import searchengine.records.ConnectionPerformance;
 import searchengine.records.PageDescription;
@@ -129,13 +131,13 @@ public class IndexingServiceImpl implements IndexingService {
 
     public IndexingResponse indexPage(IndexPage indexPage){
         IndexingResponse response = new IndexingResponse();
-        URL url = null;
+        URL url;
         try {
-            url = indexPage.getUrl();
+            url = Link.getUrlFromString(indexPage.getUrl());
         } catch (MalformedURLException e) {
             return responseError(response, e.toString());
         }
-        String portalUrl = url.getProtocol() + "://" + url.getHost().replaceAll("^www.", "");
+        String portalUrl = Link.getPortalMainUrl(url);
         Portal portal = portalRepository.findByUrl(portalUrl);
         if (portal == null) {
             Portal newPortal = null;

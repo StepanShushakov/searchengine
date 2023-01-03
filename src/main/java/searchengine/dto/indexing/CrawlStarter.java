@@ -1,4 +1,4 @@
-package searchengine;
+package searchengine.dto.indexing;
 
 import searchengine.model.Portal;
 import searchengine.records.ConnectionPerformance;

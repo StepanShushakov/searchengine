@@ -1,4 +1,4 @@
-package searchengine;
+package searchengine.dto.indexing;
 
 import searchengine.model.IndexStatus;
 import searchengine.model.Portal;
