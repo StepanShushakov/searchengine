@@ -75,7 +75,7 @@ public class Link {
         page.setContent(doc.toString());
         savePage(page);
         try {
-            Logger.getLogger(Link.class.getName()).info("индексируем страницу: " + pageDescription.url());
+//            Logger.getLogger(Link.class.getName()).info("индексируем страницу: " + pageDescription.url());
             indexPage(page, repositories, true);
         } catch (IOException e) {
             Logger.getLogger(Link.class.getName()).info("ошибка индексации страницы "

@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 
 public class SiteLinker extends RecursiveAction {
     private final PageDescription pageDescription;
@@ -40,10 +40,10 @@ public class SiteLinker extends RecursiveAction {
     @Override
     protected void compute() {
         if (stopCrawling) return;
-        Logger.getLogger(SiteLinker.class.getName())
-                .info("Compute method. Thread: " + Thread.currentThread().getName()
-                        + " url: " + this.pageDescription.url()
-                        + " parent: " + this.isParent);
+//        Logger.getLogger(SiteLinker.class.getName())
+//                .info("Compute method. Thread: " + Thread.currentThread().getName()
+//                        + " url: " + this.pageDescription.url()
+//                        + " parent: " + this.isParent);
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (String link : childrenLinks) {
