@@ -25,8 +25,7 @@ import java.util.logging.Logger;
 
 public class Link {
     private PageDescription pageDescription;
-    private RepositoriesFactory repositories;
-    private ConnectionPerformance connectionPerformance;
+    private final RepositoriesFactory repositories;
     private final ArrayList<String> childrenLinks = new ArrayList<>();
 
     private static int rnd(int min, int max){
@@ -51,7 +50,6 @@ public class Link {
         if (linkIsAdded(pageDescription.portal(), pagePath)) return;
         Uninterruptibles.sleepUninterruptibly(rnd(500, 5000), TimeUnit.MILLISECONDS);
         this.pageDescription = pageDescription;
-        this.connectionPerformance = connectionPerformance;
         Document doc = null;
         try {
             doc = Jsoup.connect(pageDescription.url())
@@ -77,9 +75,11 @@ public class Link {
         page.setContent(doc.toString());
         savePage(page);
         try {
+            Logger.getLogger(Link.class.getName()).info("индексируем страницу: " + pageDescription.url());
             indexPage(page, repositories, true);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            Logger.getLogger(Link.class.getName()).info("ошибка индексации страницы "
+                                                            + pageDescription.url() + " : " + e);
         }
         Elements elements = doc.select("a");
         if (elements.size() > 0) {
@@ -110,6 +110,9 @@ public class Link {
                 && !childrenLink.endsWith(".jpeg")
                 && !childrenLink.endsWith(".bmp")
                 && !childrenLink.endsWith(".txt")
+                && !childrenLink.endsWith(".pdf")
+                && !childrenLink.endsWith(".xls")
+                && !childrenLink.endsWith(".docx")
 //                && !childrenLink.endsWith(".ps")
 //                && !childrenLink.endsWith(".wn")
 //                && !childrenLink.endsWith(".l")
@@ -187,5 +190,10 @@ public class Link {
 
     public static String getPortalMainUrl(URL url) {
         return url.getProtocol() + "://" + url.getHost().replaceAll("^www.", "");
+    }
+
+    public static String getPath(String string) throws MalformedURLException {
+        URL url = getUrlFromString(string);
+        return url.getPath();
     }
 }

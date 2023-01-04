@@ -1,7 +1,5 @@
 package searchengine.model;
 
-import org.attoparser.dom.Text;
-
 import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
@@ -99,5 +97,10 @@ public class Portal {
 
     public void setLemmas(List<Lemma> lemmas) {
         this.lemmas = lemmas;
+    }
+
+    @Override
+    public String toString() {
+        return url;
     }
 }

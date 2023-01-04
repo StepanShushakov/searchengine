@@ -44,6 +44,7 @@ public class CrawlStarter implements Runnable{
                                                                     connectionPerformance,
                                                                     isParent));
         parentTask.join();
+        pool.shutdown();
     }
 
     public static ForkJoinPool getPool() {

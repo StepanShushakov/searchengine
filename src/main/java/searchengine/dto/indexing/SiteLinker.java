@@ -1,18 +1,18 @@
 package searchengine.dto.indexing;
 
+import lombok.SneakyThrows;
 import searchengine.model.IndexStatus;
 import searchengine.model.Portal;
 import searchengine.records.ConnectionPerformance;
 import searchengine.records.PageDescription;
 import searchengine.records.RepositoriesFactory;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
-//import java.util.logging.Logger;
+import java.util.logging.Logger;
 
 public class SiteLinker extends RecursiveAction {
     private final PageDescription pageDescription;
@@ -21,6 +21,7 @@ public class SiteLinker extends RecursiveAction {
     private final ConnectionPerformance connectionPerformance;
     private static Boolean stopCrawling = false;
     private final Boolean isParent;
+    private static final HashSet<String> verifySet = new HashSet<>();
 
     public SiteLinker(String url,
                       String host,
@@ -35,17 +36,19 @@ public class SiteLinker extends RecursiveAction {
         this.isParent = isParent;
     }
 
+    @SneakyThrows
     @Override
     protected void compute() {
         if (stopCrawling) return;
-//        Logger.getLogger(SiteLinker.class.getName())
-//                .info("Compute method. Thread: " + Thread.currentThread().getName()
-//                        + " url: " + this.pageDescription.url()
-//                        + " parent: " + this.isParent);
+        Logger.getLogger(SiteLinker.class.getName())
+                .info("Compute method. Thread: " + Thread.currentThread().getName()
+                        + " url: " + this.pageDescription.url()
+                        + " parent: " + this.isParent);
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (String link : childrenLinks) {
-            if (linkIsAdded(link)) continue;
+            if (linkIsAdded(this.pageDescription.portal(), link)) continue;
+            verifySet.add((pageDescription.portal() + Link.getPath(link)).toLowerCase());
             SiteLinker task = new SiteLinker(link
                     , this.pageDescription.host()
                     , this.pageDescription.portal()
@@ -82,16 +85,12 @@ public class SiteLinker extends RecursiveAction {
         SiteLinker.stopCrawling = stopCrawling;
     }
 
-    private boolean linkIsAdded(String link) {
-        String path;
-        try {
-            path = new URL(link).getPath();
-            if (path.isEmpty()) path = "/";
-        } catch (MalformedURLException e) {
-            return true;    //если произойдёт исключение, скажем,
-            // что страница уже добавлена,
-            // что бы не пытаться её разбирать
-        }
-        return repositories.pageRepository().findByPortalAndPath(this.pageDescription.portal(), path).size() != 0;
+    public Boolean isParent() {
+        return isParent;
+    }
+
+    @SneakyThrows
+    public static boolean linkIsAdded(Portal portal, String link) {
+        return verifySet.contains((portal + Link.getPath(link)).toLowerCase());
     }
 }
