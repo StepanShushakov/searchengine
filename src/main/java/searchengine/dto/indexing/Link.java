@@ -37,17 +37,17 @@ public class Link {
                 RepositoriesFactory repositories,
                 ConnectionPerformance connectionPerformance) {
         this.repositories = repositories;
-        String pagePath = "";
+        String pagePath;
         try {
             pagePath = new URL(pageDescription.url()).getPath();
         } catch (MalformedURLException e) {
-            //throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
+        if (linkIsAdded(pageDescription.portal(), pagePath)) return;
         Page page = new Page();
         Portal portal = pageDescription.portal();
         page.setPortal(portal);
         page.setPath(pagePath.isEmpty() ? "/" : pagePath);
-        if (linkIsAdded(pageDescription.portal(), pagePath)) return;
         Uninterruptibles.sleepUninterruptibly(rnd(500, 5000), TimeUnit.MILLISECONDS);
         this.pageDescription = pageDescription;
         Document doc = null;
@@ -57,19 +57,16 @@ public class Link {
                     .referrer(connectionPerformance.referrer())
                     .get();
             page.setCode(doc.connection().response().statusCode());
-        } catch (IOException e) {
-            try {
-                page.setCode(((HttpStatusException) e).getStatusCode());
-                page.setContent(e.toString());
-                portal.setLastError(e.toString());
-                savePage(page);
-            } catch (Exception ex) {
-                page.setCode(0);
-                page.setContent(ex.toString());
-                portal.setLastError(ex.toString());
-                savePage(page);
-            }
-
+        } catch (HttpStatusException e) {
+            page.setCode(e.getStatusCode());
+            page.setContent(e.toString());
+            portal.setLastError(e.toString());
+            savePage(page);
+        } catch (Exception e) {
+            page.setCode(0);
+            page.setContent(e.toString());
+            portal.setLastError(e.toString());
+            savePage(page);
         }
         if (doc == null) return;
         page.setContent(doc.toString());
@@ -81,12 +78,16 @@ public class Link {
             Logger.getLogger(Link.class.getName()).info("ошибка индексации страницы "
                                                             + pageDescription.url() + " : " + e);
         }
+        setChildrenLinks(doc);
+    }
+
+    private void setChildrenLinks(Document doc) {
         Elements elements = doc.select("a");
         if (elements.size() > 0) {
             elements.forEach(element -> {
                 String childrenLink = element.attr("abs:href");
                 if (childrenLink.toLowerCase().startsWith("http")
-                    && linkIsCorrect(childrenLink.toLowerCase())) {
+                        && linkIsCorrect(childrenLink.toLowerCase())) {
                     this.childrenLinks.add(childrenLink);
                 }
             });
@@ -113,6 +114,8 @@ public class Link {
                 && !childrenLink.endsWith(".pdf")
                 && !childrenLink.endsWith(".xls")
                 && !childrenLink.endsWith(".docx")
+                && !childrenLink.endsWith(".gif")
+                && !childrenLink.endsWith(".webp")
 //                && !childrenLink.endsWith(".ps")
 //                && !childrenLink.endsWith(".wn")
 //                && !childrenLink.endsWith(".l")

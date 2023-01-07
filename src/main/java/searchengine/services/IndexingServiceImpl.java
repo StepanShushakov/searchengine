@@ -106,17 +106,17 @@ public class IndexingServiceImpl implements IndexingService {
     public IndexingResponse stopIndexing() {
         IndexingResponse response = new IndexingResponse();
         ForkJoinPool pool = CrawlStarter.getPool();
-        if (pool.getPoolSize() == 0)
+        if (!SiteLinker.indexingStarted())
             return responseError(response, "Индексация не запущена");
         else {
             SiteLinker.setStopCrawling(true);
+            SiteLinker.setIndexingStarted(false);
             pool.shutdown();
             try {
                 if ((!pool.awaitTermination(800, TimeUnit.MILLISECONDS))) pool.shutdownNow();
             } catch (InterruptedException e) {
                 pool.shutdownNow();
             }
-
             while (pool.getPoolSize() > 0);  //подождем, пока завершатся задачи пула потоков
             List<Portal> portals = portalRepository.findAll();
             portals.forEach(portal -> {
@@ -138,22 +138,9 @@ public class IndexingServiceImpl implements IndexingService {
         } catch (MalformedURLException e) {
             return responseError(response, e.toString());
         }
-        String portalUrl = Link.getPortalMainUrl(url);
-        Portal portal = portalRepository.findByUrl(portalUrl);
-        if (portal == null) {
-            Portal newPortal = null;
-            for (Site site: sites.getSites()) {
-                if (site.getUrl().equals(portalUrl)) {
-                    newPortal = createPortalBySite(site, portalUrl);
-                    break;
-                }
-            }
-            if (newPortal == null) {
-                return responseError(response, "Данная страница находится за пределами сайтов,\n" +
-                        "указанных в конфигурационном файле");
-            }
-            portal = newPortal;
-        }
+        Portal portal = findPortalByMainUrl(Link.getPortalMainUrl(url));
+        if (portal == null) return responseError(response, "Данная страница находится за пределами сайтов,\n" +
+                    "указанных в конфигурационном файле");
 
         List<Page> pages = pageRepository.findByPortalAndPath(portal, url.getPath());
 
@@ -176,6 +163,21 @@ public class IndexingServiceImpl implements IndexingService {
             }
         }
         return response;
+    }
+
+    private Portal findPortalByMainUrl(String portalUrl){
+        Portal portal = portalRepository.findByUrl(portalUrl);
+        if (portal == null) {
+            Portal newPortal = null;
+            for (Site site: sites.getSites()) {
+                if (site.getUrl().equals(portalUrl)) {
+                    newPortal = createPortalBySite(site, portalUrl);
+                    break;
+                }
+            }
+            portal = newPortal;
+        }
+        return portal;
     }
 
     @Override
@@ -212,6 +214,7 @@ public class IndexingServiceImpl implements IndexingService {
             }
             this.statement.execute( "delete from `index` where page_id in " +
                     "(select id from page where site_id = " + portal.getId() + ")");
+            this.statement.execute("delete from lemma where site_id = " + portal.getId());
             this.statement.execute("delete from page where site_id = " + portal.getId());
         } catch (SQLException e) {
             throw new RuntimeException(e);
