@@ -61,8 +61,9 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse startIndexing() {
         IndexingResponse response = new IndexingResponse();
-        if (getPoolSize() > 0) return responseError(response, "Индексация уже запущена");
+        if (SiteLinker.indexingStarted()) return responseError(response, "Индексация уже запущена");
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        SiteLinker.setIndexingStarted(true);
         for (Site site : sites.getSites()) {
             String portalUrl = site.getUrl();
             Portal portal = portalRepository.findByUrl(portalUrl);

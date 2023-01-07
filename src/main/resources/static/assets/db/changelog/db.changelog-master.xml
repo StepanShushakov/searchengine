@@ -9,7 +9,7 @@
 
     <include file="static/assets/db/changelog/init.xml"/>
     <include file="static/assets/db/changelog/indexPathAdding.xml"/>
-    <include file="static/assets/db/changelog/columnWordInLemmaAdding.xml" />
+<!--    <include file="static/assets/db/changelog/columnWordInLemmaAdding.xml" />-->
     <include file="static/assets/db/changelog/indexesForLemmaTableAdding.xml" />
 
 </databaseChangeLog>

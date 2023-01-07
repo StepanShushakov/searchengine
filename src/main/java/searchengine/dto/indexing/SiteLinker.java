@@ -6,11 +6,10 @@ import searchengine.model.Portal;
 import searchengine.records.ConnectionPerformance;
 import searchengine.records.PageDescription;
 import searchengine.records.RepositoriesFactory;
+import searchengine.repositories.PortalRepository;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RecursiveAction;
 //import java.util.logging.Logger;
 
@@ -21,7 +20,9 @@ public class SiteLinker extends RecursiveAction {
     private final ConnectionPerformance connectionPerformance;
     private static Boolean stopCrawling = false;
     private final Boolean isParent;
-    private static final HashSet<String> verifySet = new HashSet<>();
+    private static final ConcurrentHashMap<String, Integer> verifyHashMap = new ConcurrentHashMap<>();
+    private static final Set<String> verifySet = verifyHashMap.newKeySet();
+    private static boolean indexingStarted = false;
 
     public SiteLinker(String url,
                       String host,
@@ -69,7 +70,11 @@ public class SiteLinker extends RecursiveAction {
             Portal portal = this.getPageDescription().portal();
             portal.setStatus(IndexStatus.INDEXED);
             portal.setStatusTime(new Date());
-            this.getRepositories().portalRepository().save(portal);
+            PortalRepository portalRepository = this.getRepositories().portalRepository();
+            portalRepository.save(portal);
+            if (portalRepository.countByStatusNot(IndexStatus.INDEXED) == 0) {
+                SiteLinker.setIndexingStarted(false);
+            }
         }
     }
 
@@ -92,5 +97,13 @@ public class SiteLinker extends RecursiveAction {
     @SneakyThrows
     public static boolean linkIsAdded(Portal portal, String link) {
         return verifySet.contains((portal + Link.getPath(link)).toLowerCase());
+    }
+
+    public static void setIndexingStarted(boolean indexingStarted) {
+        SiteLinker.indexingStarted = indexingStarted;
+    }
+
+    public static boolean indexingStarted() {
+        return indexingStarted;
     }
 }

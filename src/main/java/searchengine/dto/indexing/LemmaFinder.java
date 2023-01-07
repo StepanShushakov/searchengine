@@ -31,9 +31,9 @@ public class LemmaFinder {
      * @param text текст из которого будут выбираться леммы
      * @return ключ является леммой, а значение количеством найденных лемм
      */
-    public Map<String, /*Integer*/ ArrayList<String>> collectLemmas(String text) {
+    public Map<String, Integer /*ArrayList<String>*/> collectLemmas(String text) {
         String[] words = arrayContainsRussianWords(text);
-        HashMap<String, /*Integer*/ ArrayList<String>> lemmas = new HashMap<>();
+        HashMap<String, Integer /*ArrayList<String>*/> lemmas = new HashMap<>();
 
         for (String word : words) {
             if (word.isBlank()
@@ -54,11 +54,11 @@ public class LemmaFinder {
             String normalWord = normalForms.get(0);
 
             if (lemmas.containsKey(normalWord)) {
-                /*lemmas.put(normalWord, lemmas.get(normalWord) + 1);*/
-                lemmas.get(normalWord).add(word);
+                lemmas.put(normalWord, lemmas.get(normalWord) + 1);
+                /*lemmas.get(normalWord).add(word);*/
             } else {
-                /*lemmas.put(normalWord, 1);*/
-                lemmas.put(normalWord, new ArrayList<>(List.of(word)));
+                lemmas.put(normalWord, 1);
+                /*lemmas.put(normalWord, new ArrayList<>(List.of(word)));*/
             }
         }
 

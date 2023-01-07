@@ -151,23 +151,23 @@ public class Link {
 
     public static void indexPage(Page page, RepositoriesFactory repositories, Boolean isNew) throws IOException {
         String text = page.getContent();
-        Map<String, /*Integer*/ ArrayList<String>> lemmas = LemmaFinder
+        Map<String, Integer /*ArrayList<String>*/> lemmas = LemmaFinder
                                         .getInstance()
                                         .collectLemmas(text.replaceAll("<[^>]+>", ""));
-        lemmas.forEach((lemma, words) -> {
+        lemmas.forEach((lemma, rank) -> {
 //           Logger.getLogger(Link.class.getName()).info(page.getPath() + ": " + lemma + " " + words.size());
            List<Lemma> lemmasList = repositories.lemmaRepository().findByPortalAndLemma(page.getPortal(), lemma);
            Lemma lemmaRecord;
-            String stringWords = words.toString().replace("[", "").replace("]", "");
+            /*String stringWords = words.toString().replace("[", "").replace("]", "");*/
             if (lemmasList.size() == 0) {
                lemmaRecord = new Lemma();
                lemmaRecord.setPortal(page.getPortal());
-               lemmaRecord.setWord(stringWords);
+               /*lemmaRecord.setWord(stringWords);*/
            } else {
                lemmaRecord = lemmasList.get(0);
-               lemmaRecord.setWord(lemmaRecord.getWord()
+               /*lemmaRecord.setWord(lemmaRecord.getWord()
                        + ", "
-                       + stringWords);
+                       + stringWords);*/
            }
             lemmaRecord.setLemma(lemma);
 
@@ -179,7 +179,7 @@ public class Link {
            else index = new IndexEntity();
            index.setPage(page);
            index.setLemma(lemmaRecord);
-           index.setRank(words.size());
+           index.setRank(rank);
            repositories.indexRepository().save(index);
         });
     }

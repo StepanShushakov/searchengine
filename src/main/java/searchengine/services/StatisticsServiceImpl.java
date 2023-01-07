@@ -52,9 +52,13 @@ public class StatisticsServiceImpl implements StatisticsService {
                 IndexStatus status = portal.getStatus();
                 if (status != IndexStatus.INDEXED) allIndexed = false;
                 item.setStatus(status.toString());
-                item.setError(portal.getLastError());
+                String lastError = portal.getLastError();
+                item.setError(lastError == null ? "" : lastError);
                 item.setStatusTime(portal.getStatusTime().getTime());
-            } else allIndexed = false;
+            } else {
+                allIndexed = false;
+                item.setError("");
+            }
             total.setIndexing(allIndexed);
             total.setPages(total.getPages() + pages);
             total.setLemmas(total.getLemmas() + lemmas);

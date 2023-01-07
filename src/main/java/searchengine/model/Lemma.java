@@ -24,8 +24,8 @@ public class Lemma {
     @OneToMany(mappedBy = "lemma")
     private List<IndexEntity> index;
 
-    @Column
-    private String word;
+    /*@Column
+    private String word;*/
 
 
     public int getId() {
@@ -60,11 +60,11 @@ public class Lemma {
         this.frequency = frequency;
     }
 
-    public String getWord() {
+    /*public String getWord() {
         return word;
     }
 
     public void setWord(String word) {
         this.word = word;
-    }
+    }*/
 }
