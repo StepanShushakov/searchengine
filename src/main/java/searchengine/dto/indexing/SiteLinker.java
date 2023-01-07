@@ -1,6 +1,8 @@
 package searchengine.dto.indexing;
 
 import lombok.SneakyThrows;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import searchengine.model.IndexStatus;
 import searchengine.model.Portal;
 import searchengine.records.ConnectionPerformance;
@@ -23,6 +25,7 @@ public class SiteLinker extends RecursiveAction {
     private static final ConcurrentHashMap<String, Integer> verifyHashMap = new ConcurrentHashMap<>();
     private static final Set<String> verifySet = verifyHashMap.newKeySet();
     private static boolean indexingStarted = false;
+    private static Logger logger4j = LogManager.getRootLogger();
 
     public SiteLinker(String url,
                       String host,
@@ -42,9 +45,10 @@ public class SiteLinker extends RecursiveAction {
     protected void compute() {
         if (stopCrawling) return;
 //        Logger.getLogger(SiteLinker.class.getName())
-//                .info("Compute method. Thread: " + Thread.currentThread().getName()
-//                        + " url: " + this.pageDescription.url()
-//                        + " parent: " + this.isParent);
+        logger4j
+                .info("Compute method. Thread: " + Thread.currentThread().getName()
+                        + " url: " + this.pageDescription.url()
+                        + " parent: " + this.isParent);
         List<SiteLinker> taskList = new ArrayList<>();
         List<String> childrenLinks = this.link.getChildrenLinks();
         for (String link : childrenLinks) {
@@ -61,9 +65,10 @@ public class SiteLinker extends RecursiveAction {
         }
         for (SiteLinker task : taskList) {
 //            Logger.getLogger(SiteLinker.class.getName())
-//                    .info("join Thread: " + Thread.currentThread().getName()
-//                            + " url: "+ task.getPageDescription().url()
-//                            + " parent: " + task.isParent());
+            logger4j
+                    .info("join Thread: " + Thread.currentThread().getName()
+                            + " url: "+ task.getPageDescription().url()
+                            + " parent: " + task.isParent());
             task.join();
         }
         if (this.isParent) {
