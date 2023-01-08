@@ -1,8 +1,6 @@
 package searchengine.dto.indexing;
 
 import com.google.common.util.concurrent.Uninterruptibles;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -23,13 +21,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-//import java.util.logging.Logger;
 
 public class Link {
     private PageDescription pageDescription;
     private final RepositoriesFactory repositories;
     private final ArrayList<String> childrenLinks = new ArrayList<>();
-    private static Logger logger4j = LogManager.getRootLogger();
 
     private static int rnd(int min, int max){
         max -= min;
@@ -74,16 +70,13 @@ public class Link {
         if (doc == null) return;
         page.setContent(doc.toString());
         savePage(page);
-        try {
-//            Logger.getLogger(Link.class.getName())
-//        logger4j
-//        .info("индексируем страницу: " + pageDescription.url());
-            indexPage(page, repositories, true);
-        } catch (IOException e) {
-//            Logger.getLogger(Link.class.getName())
-            logger4j
-            .info("ошибка индексации страницы " + pageDescription.url() + " : " + e);
-        }
+        new Thread(() -> {
+            try {
+                indexPage(page, repositories, true);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
         setChildrenLinks(doc);
     }
 
@@ -156,25 +149,19 @@ public class Link {
         return repositories.pageRepository().findByPortalAndPath(portal, path).size() != 0;
     }
 
-    public static void indexPage(Page page, RepositoriesFactory repositories, Boolean isNew) throws IOException {
+    public static synchronized void indexPage(Page page, RepositoriesFactory repositories, Boolean isNew) throws IOException {
         String text = page.getContent();
-        Map<String, Integer /*ArrayList<String>*/> lemmas = LemmaFinder
+        Map<String, Integer > lemmas = LemmaFinder
                                         .getInstance()
                                         .collectLemmas(text.replaceAll("<[^>]+>", ""));
         lemmas.forEach((lemma, rank) -> {
-//           Logger.getLogger(Link.class.getName()).info(page.getPath() + ": " + lemma + " " + words.size());
            List<Lemma> lemmasList = repositories.lemmaRepository().findByPortalAndLemma(page.getPortal(), lemma);
            Lemma lemmaRecord;
-            /*String stringWords = words.toString().replace("[", "").replace("]", "");*/
             if (lemmasList.size() == 0) {
                lemmaRecord = new Lemma();
                lemmaRecord.setPortal(page.getPortal());
-               /*lemmaRecord.setWord(stringWords);*/
            } else {
                lemmaRecord = lemmasList.get(0);
-               /*lemmaRecord.setWord(lemmaRecord.getWord()
-                       + ", "
-                       + stringWords);*/
            }
             lemmaRecord.setLemma(lemma);
 
