@@ -1,6 +1,8 @@
 package searchengine.dto.indexing;
 
 import com.google.common.util.concurrent.Uninterruptibles;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,12 +23,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 
 public class Link {
     private PageDescription pageDescription;
     private final RepositoriesFactory repositories;
     private final ArrayList<String> childrenLinks = new ArrayList<>();
+    private static Logger logger4j = LogManager.getRootLogger();
 
     private static int rnd(int min, int max){
         max -= min;
@@ -72,11 +75,14 @@ public class Link {
         page.setContent(doc.toString());
         savePage(page);
         try {
-//            Logger.getLogger(Link.class.getName()).info("индексируем страницу: " + pageDescription.url());
+//            Logger.getLogger(Link.class.getName())
+//        logger4j
+//        .info("индексируем страницу: " + pageDescription.url());
             indexPage(page, repositories, true);
         } catch (IOException e) {
-            Logger.getLogger(Link.class.getName()).info("ошибка индексации страницы "
-                                                            + pageDescription.url() + " : " + e);
+//            Logger.getLogger(Link.class.getName())
+            logger4j
+            .info("ошибка индексации страницы " + pageDescription.url() + " : " + e);
         }
         setChildrenLinks(doc);
     }
@@ -100,9 +106,7 @@ public class Link {
             hostIsCorrect = new URL(childrenLink).getHost().replaceAll("^www.", "")
                     .equals(this.pageDescription.host());
         } catch (MalformedURLException e) {
-            //throw new RuntimeException(e);
-            Logger.getLogger(Link.class.getName()).info("catch at url pulling: " + e);
-            return false;
+            throw new RuntimeException(e);
         }
         return hostIsCorrect
                 && !childrenLink.endsWith(".doc")
