@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class Link {
     private PageDescription pageDescription;
     private final RepositoriesFactory repositories;
+    private ConnectionPerformance connectionPerformance;
     private final ArrayList<String> childrenLinks = new ArrayList<>();
 
     private static int rnd(int min, int max){
@@ -37,11 +38,7 @@ public class Link {
                 ConnectionPerformance connectionPerformance) {
         this.repositories = repositories;
         String pagePath;
-        try {
-            pagePath = new URL(pageDescription.url()).getPath();
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
+        pagePath = getPathByStringUrl(pageDescription.url());
         if (linkIsAdded(pageDescription.portal(), pagePath)) return;
         Page page = new Page();
         Portal portal = pageDescription.portal();
@@ -49,24 +46,8 @@ public class Link {
         page.setPath(pagePath.isEmpty() ? "/" : pagePath);
         Uninterruptibles.sleepUninterruptibly(rnd(500, 5000), TimeUnit.MILLISECONDS);
         this.pageDescription = pageDescription;
-        Document doc = null;
-        try {
-            doc = Jsoup.connect(pageDescription.url())
-                    .userAgent(connectionPerformance.userAgent())
-                    .referrer(connectionPerformance.referrer())
-                    .get();
-            page.setCode(doc.connection().response().statusCode());
-        } catch (HttpStatusException e) {
-            page.setCode(e.getStatusCode());
-            page.setContent(e.toString());
-            portal.setLastError(e.toString());
-            savePage(page);
-        } catch (Exception e) {
-            page.setCode(0);
-            page.setContent(e.toString());
-            portal.setLastError(e.toString());
-            savePage(page);
-        }
+        this.connectionPerformance = connectionPerformance;
+        Document doc = getDoc(page, portal);
         if (doc == null) return;
         page.setContent(doc.toString());
         savePage(page);
@@ -78,6 +59,37 @@ public class Link {
             }
         }).start();
         setChildrenLinks(doc);
+    }
+
+    private Document getDoc(Page page, Portal portal) {
+        Document doc = null;
+        try {
+            doc = Jsoup.connect(pageDescription.url())
+                    .userAgent(connectionPerformance.userAgent())
+                    .referrer(connectionPerformance.referrer())
+                    .get();
+            page.setCode(doc.connection().response().statusCode());
+        } catch (HttpStatusException e) {
+            saveWithStatusCode(e.getStatusCode(), e.toString(), page, portal);
+        } catch (Exception e) {
+            saveWithStatusCode(0, e.toString(), page, portal);
+        }
+        return doc;
+    }
+
+    private String getPathByStringUrl(String url) {
+        try {
+            return new URL(url).getPath();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void saveWithStatusCode(int statusCode, String error, Page page, Portal portal) {
+        page.setCode(statusCode);
+        page.setContent(error);
+        portal.setLastError(error);
+        savePage(page);
     }
 
     private void setChildrenLinks(Document doc) {
@@ -113,19 +125,6 @@ public class Link {
                 && !childrenLink.endsWith(".docx")
                 && !childrenLink.endsWith(".gif")
                 && !childrenLink.endsWith(".webp")
-//                && !childrenLink.endsWith(".ps")
-//                && !childrenLink.endsWith(".wn")
-//                && !childrenLink.endsWith(".l")
-//                && !childrenLink.endsWith(".h")
-//                && !childrenLink.endsWith(".dtd")
-//                && !childrenLink.endsWith(".pl")
-//                && !childrenLink.endsWith(".c")
-//                && !childrenLink.endsWith(".sed")
-//                && !childrenLink.endsWith(".app")
-//                && !childrenLink.endsWith(".draw")
-//                && !childrenLink.endsWith(".tex")
-//                && !childrenLink.endsWith(".edu")
-//                && !childrenLink.endsWith(".jp")
                 ;
     }
 
