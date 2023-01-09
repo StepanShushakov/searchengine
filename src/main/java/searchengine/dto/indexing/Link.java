@@ -16,6 +16,7 @@ import searchengine.records.RepositoriesFactory;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -44,7 +45,7 @@ public class Link {
         Portal portal = pageDescription.portal();
         page.setPortal(portal);
         page.setPath(pagePath.isEmpty() ? "/" : pagePath);
-        Uninterruptibles.sleepUninterruptibly(rnd(500, 5000), TimeUnit.MILLISECONDS);
+        Uninterruptibles.sleepUninterruptibly(200/*rnd(500, 5000)*/, TimeUnit.MILLISECONDS);
         this.pageDescription = pageDescription;
         this.connectionPerformance = connectionPerformance;
         Document doc = getDoc(page, portal);
