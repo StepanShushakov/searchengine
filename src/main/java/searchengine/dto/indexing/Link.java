@@ -59,7 +59,7 @@ public class Link {
         if (repositories == null) repositories = inputRepositories;
         String pagePath;
         pagePath = getPathByStringUrl(pageDescription.url());
-//        if (linkIsAdded(pageDescription.portal(), pagePath)) return;
+        if (linkIsAdded(pageDescription.portal(), pagePath)) return;
         Page page = new Page();
         Portal portal = pageDescription.portal();
         page.setPortal(portal);
