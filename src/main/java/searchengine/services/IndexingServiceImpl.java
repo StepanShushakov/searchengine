@@ -71,11 +71,12 @@ public class IndexingServiceImpl implements IndexingService {
                 portalRepository.delete(portal);
             }
             Portal newPortal = createPortalBySite(site, portalUrl);
-            executor.submit(new CrawlStarter(newPortal.getUrl()
-                    , newPortal
-                    , new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository, indexRepository)
-                    , new ConnectionPerformance(userAgent, referrer)
-                    , true));
+            CrawlStarter.setRepositoriesFactory(new RepositoriesFactory(portalRepository,
+                                                                            pageRepository,
+                                                                            lemmaRepository,
+                                                                            indexRepository));
+            CrawlStarter.setConnectionPerformance(new ConnectionPerformance(userAgent, referrer));
+            executor.submit(new CrawlStarter(newPortal));
         }
         closeStatementConnection();
         executor.shutdown();

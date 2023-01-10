@@ -13,25 +13,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RecursiveAction;
 
 public class SiteLinker extends RecursiveAction {
-    private final PageDescription pageDescription;
     private final Link link;
-    private final RepositoriesFactory repositories;
-    private final ConnectionPerformance connectionPerformance;
+    private final PageDescription pageDescription;
+    private static RepositoriesFactory repositories;
+    private static ConnectionPerformance connectionPerformance;
     private static Boolean stopCrawling = false;
-    private final Boolean isParent;
     private static final Set<String> verifySet = ConcurrentHashMap.newKeySet();
     private static boolean indexingStarted = false;
 
-    public SiteLinker(String url,
-                      Portal portal,
-                      RepositoriesFactory repositories,
-                      ConnectionPerformance connectionPerformance,
-                      Boolean isParent) {
-        this.repositories = repositories;
-        this.connectionPerformance = connectionPerformance;
-        this.pageDescription = new PageDescription(url, portal, isParent);
-        this.link = new Link(pageDescription, repositories, connectionPerformance);
-        this.isParent = isParent;
+    public SiteLinker(String url, Portal portal, boolean isNew) {
+        this.pageDescription = new PageDescription(url, portal, isNew);
+        this.link = new Link(pageDescription,
+                                SiteLinker.repositories,
+                                SiteLinker.connectionPerformance);
+    }
+
+    public static void setRepositories(RepositoriesFactory repositories) {
+        if (SiteLinker.repositories == null) SiteLinker.repositories = repositories;
+    }
+
+    public static void setConnectionPerformance(ConnectionPerformance connectionPerformance) {
+        if (SiteLinker.connectionPerformance ==null) SiteLinker.connectionPerformance = connectionPerformance;
     }
 
     @SneakyThrows
@@ -43,18 +45,14 @@ public class SiteLinker extends RecursiveAction {
         for (String link : childrenLinks) {
             if (linkIsAdded(this.pageDescription.portal(), link)) continue;
             verifySet.add((pageDescription.portal() + Link.getPath(link)).toLowerCase());
-            SiteLinker task = new SiteLinker(link
-                    , this.pageDescription.portal()
-                    , this.repositories
-                    , this.connectionPerformance
-                    , false);
+            SiteLinker task = new SiteLinker(link, pageDescription.portal(), false);
             task.fork();
             taskList.add(task);
         }
         for (SiteLinker task : taskList) {
             task.join();
         }
-        if (this.isParent) {
+        if (this.pageDescription.isParent()) {
             Portal portal = this.getPageDescription().portal();
             portal.setStatus(IndexStatus.INDEXED);
             portal.setStatusTime(new Date());
@@ -76,10 +74,6 @@ public class SiteLinker extends RecursiveAction {
 
     public static void setStopCrawling(Boolean stopCrawling) {
         SiteLinker.stopCrawling = stopCrawling;
-    }
-
-    public Boolean isParent() {
-        return isParent;
     }
 
     @SneakyThrows

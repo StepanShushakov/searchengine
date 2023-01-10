@@ -9,23 +9,22 @@ import java.util.concurrent.ForkJoinTask;
 
 public class CrawlStarter implements Runnable{
     private static final ForkJoinPool pool = new ForkJoinPool();
-
-    private final String url;
     private final Portal portal;
-    RepositoriesFactory repositoriesFactory;
-    ConnectionPerformance connectionPerformance;
-    private final boolean isParent;
+    private static RepositoriesFactory repositories;
+    private static ConnectionPerformance connectionPerformance;
 
-    public CrawlStarter(String url,
-                        Portal portal,
-                        RepositoriesFactory repositoriesFactory,
-                        ConnectionPerformance connectionPerformance,
-                        boolean isParent) {
-        this.url = url;
+    public CrawlStarter(Portal portal) {
         this.portal = portal;
-        this.repositoriesFactory = repositoriesFactory;
-        this.connectionPerformance = connectionPerformance;
-        this.isParent = isParent;
+        SiteLinker.setRepositories(CrawlStarter.repositories);
+        SiteLinker.setConnectionPerformance(CrawlStarter.connectionPerformance);
+    }
+
+    public static void setRepositoriesFactory(RepositoriesFactory repositories) {
+        if (CrawlStarter.repositories == null) CrawlStarter.repositories = repositories;
+    }
+
+    public static void setConnectionPerformance(ConnectionPerformance connectionPerformance) {
+        if (CrawlStarter.connectionPerformance == null) CrawlStarter.connectionPerformance = connectionPerformance;
     }
 
     public static Integer getPoolSize() {
@@ -34,11 +33,9 @@ public class CrawlStarter implements Runnable{
 
     @Override
     public void run() {
-        ForkJoinTask<Void> parentTask = pool.submit(new SiteLinker(url,
+        ForkJoinTask<Void> parentTask = pool.submit(new SiteLinker(portal.getUrl(),
                                                                     portal,
-                                                                    repositoriesFactory,
-                                                                    connectionPerformance,
-                                                                    isParent));
+                                                                    true));
         parentTask.join();
         pool.shutdown();
     }
