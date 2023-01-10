@@ -23,14 +23,13 @@ public class SiteLinker extends RecursiveAction {
     private static boolean indexingStarted = false;
 
     public SiteLinker(String url,
-                      String host,
                       Portal portal,
                       RepositoriesFactory repositories,
                       ConnectionPerformance connectionPerformance,
                       Boolean isParent) {
         this.repositories = repositories;
         this.connectionPerformance = connectionPerformance;
-        this.pageDescription = new PageDescription(url, host, portal);
+        this.pageDescription = new PageDescription(url, portal, isParent);
         this.link = new Link(pageDescription, repositories, connectionPerformance);
         this.isParent = isParent;
     }
@@ -45,7 +44,6 @@ public class SiteLinker extends RecursiveAction {
             if (linkIsAdded(this.pageDescription.portal(), link)) continue;
             verifySet.add((pageDescription.portal() + Link.getPath(link)).toLowerCase());
             SiteLinker task = new SiteLinker(link
-                    , this.pageDescription.host()
                     , this.pageDescription.portal()
                     , this.repositories
                     , this.connectionPerformance

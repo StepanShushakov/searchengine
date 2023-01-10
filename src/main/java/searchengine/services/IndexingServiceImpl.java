@@ -20,7 +20,6 @@ import searchengine.repositories.PageRepository;
 import searchengine.repositories.PortalRepository;
 import searchengine.response.IndexPage;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
@@ -72,23 +71,14 @@ public class IndexingServiceImpl implements IndexingService {
                 portalRepository.delete(portal);
             }
             Portal newPortal = createPortalBySite(site, portalUrl);
-            try {
-                executor.submit(new CrawlStarter(newPortal.getUrl()
-                        , new URL(portalUrl).getHost()
-                        , newPortal
-                        , new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository, indexRepository)
-                        , new ConnectionPerformance(userAgent, referrer)
-                        , true));
-            } catch (MalformedURLException e) {
-                newPortal.setStatusTime(new Date());
-                newPortal.setStatus(IndexStatus.FAILED);
-                portalRepository.save(newPortal);
-                return responseError(response, e.toString());
-            }
+            executor.submit(new CrawlStarter(newPortal.getUrl()
+                    , newPortal
+                    , new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository, indexRepository)
+                    , new ConnectionPerformance(userAgent, referrer)
+                    , true));
         }
         closeStatementConnection();
         executor.shutdown();
-        response.setResult(true);
         return response;
     }
 
@@ -146,20 +136,15 @@ public class IndexingServiceImpl implements IndexingService {
 
         if (pages.size() == 0) {
             Link link = new Link(new PageDescription(url.getProtocol() + "://" + url.getHost() + url.getPath()
-                                                        ,url.getHost()
-                                                        ,portal)
+                                                        ,portal, url.getHost().equals(portal.getUrl()))
                         ,new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository, indexRepository)
                         ,new ConnectionPerformance(this.userAgent, this.referrer)
             );
         } else {
             for (Page page: pages) {
-                try {
-                    Link.indexPage(page
-                    ,new RepositoriesFactory(null, null, lemmaRepository, indexRepository)
-                    ,false);
-                } catch (IOException e) {
-                    return responseError(response, e.toString());
-                }
+                Link.setRepositories(new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository, indexRepository));
+                Link.setConnectionPerformance(new ConnectionPerformance(userAgent, referrer));
+                Link.indexPage(page, Link.getDoc(page, portal),false);
             }
         }
         return response;

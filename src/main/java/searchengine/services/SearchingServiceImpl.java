@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.LemmaFinder;
 import searchengine.dto.searching.SearchingResponse;
+import searchengine.records.LemmasFrequency;
 import searchengine.response.SearchRequest;
 
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @RequiredArgsConstructor
@@ -25,14 +27,45 @@ public class SearchingServiceImpl implements SearchingService{
     @Override
     public SearchingResponse search(SearchRequest searchRequest) {
         Set <String> lemmas = getLemmaSet(searchRequest.getQuery());
-        lemmas = getNeedLemmaSet(lemmas.toString()
+        String siteUrl = searchRequest.getSite();
+        ArrayList<LemmasFrequency> lemmas2Search = getLemmas2Search(lemmas.toString()
                     .replace("[", "'")
                     .replace("]","'")
                     .replaceAll(", ", "', '")
-                ,(searchRequest.getSite() == null ? "" : "\nand s.url = ?"));
-
+                ,(siteUrl == null ? "" : "\nand s.url = '" + siteUrl + "'"));
+        AtomicReference<String> pagesId = new AtomicReference<>("");
+        for (LemmasFrequency lf: lemmas2Search) {
+            String newPageId = searchPages(lf.lemma(), pagesId.get(), siteUrl);
+            if (newPageId.isEmpty()) break;
+            pagesId.set(newPageId);
+        }
         closeStatementConnection();
         return null;
+    }
+
+    private String searchPages(String lemma, String pagesId, String siteUrl) {
+        try {
+            ResultSet rs = this.statement.executeQuery("""
+                    select
+                        i.page_id
+                    from lemma l
+                    inner join `index` i
+                        on l.id = i.lemma_id
+                        and l.lemma = '""" + lemma + "'"
+                            + (pagesId.isEmpty() ? "" : "\n   and page_id in (" + pagesId + ")"
+                            + (siteUrl == null ? "" : """
+                    \ninner join site
+                        on i.site_id =  s.id
+                        and s.url = '""" + siteUrl + "'"))
+                    );
+            StringBuilder newId = new StringBuilder();
+            while (rs.next()) {
+                newId.append((newId.length() == 0) ? "" : ", ").append(rs.getInt("page_id"));
+            }
+            return newId.toString();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Set<String> getLemmaSet(String query) {
@@ -45,7 +78,7 @@ public class SearchingServiceImpl implements SearchingService{
         return lemmas;
     }
 
-    private Set<String> getNeedLemmaSet(String lemmas, String site) {
+    private ArrayList<LemmasFrequency> getLemmas2Search(String lemmas, String siteCondition) {
         try {
             if (this.connection == null ||
                     this.connection.isClosed()) {
@@ -53,33 +86,32 @@ public class SearchingServiceImpl implements SearchingService{
                 this.statement = connection.createStatement();
             }
             ResultSet rs = this.statement.executeQuery("""
-                select\s
-                	l.lemma, l.frequency
+                select
+                	l.lemma, sum(l.frequency) as frequency
                 from lemma l
                 left join site s
                     on l.site_id = s.id
-                where l.lemma in (""" + lemmas + ")" + site);
+                where l.lemma in (""" + lemmas + ")" + siteCondition + """
+                group by l.lemma
+                order by frequency""");
             double totalCount = 0;
-            HashMap<String, Integer> result = new HashMap<>();
+            ArrayList<LemmasFrequency> result = new ArrayList<>();
             while (rs.next()) {
                 String key = rs.getString("lemma");
-                result.put(key, (result.get(key) == null ? 0 : result.get(key)) + rs.getInt("frequency"));
+                result.add(new LemmasFrequency(key, rs.getInt("frequency")));
                 totalCount = totalCount + rs.getInt("frequency");
             }
-            closeStatementConnection();
             removeOftenKeys(result, totalCount);
-            return result.keySet();
+            return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void removeOftenKeys(HashMap<String, Integer> result, double totalCount) {
-        ArrayList<String> keys2Remove = new ArrayList<>();
-        for (String key: result.keySet()) {
-            if (result.get(key) / totalCount >= 0.4) keys2Remove.add(key);
-        }
-        keys2Remove.forEach(k -> result.remove(k));
+    private void removeOftenKeys(ArrayList<LemmasFrequency> result, double totalCount) {
+        ArrayList<LemmasFrequency> elements2Remove = new ArrayList<>();
+        result.forEach(lF -> {if (lF.frequency() / totalCount >= 0.4) elements2Remove.add(lF);});
+        elements2Remove.forEach(result::remove);
     }
 
     private void closeStatementConnection() {

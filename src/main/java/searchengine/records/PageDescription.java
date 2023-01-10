@@ -2,5 +2,5 @@ package searchengine.records;
 
 import searchengine.model.Portal;
 
-public record PageDescription(String url, String host, Portal portal) {
+public record PageDescription(String url, Portal portal, boolean isParent) {
 }

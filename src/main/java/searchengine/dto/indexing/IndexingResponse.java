@@ -1,15 +1,14 @@
 package searchengine.dto.indexing;
 
 import lombok.Data;
-import searchengine.config.SitesList;
 
 @Data
 public class IndexingResponse {
     private boolean result;
     private String error;
 
-    public boolean isResult() {
-        return result;
+    public IndexingResponse() {
+        this.result = true;
     }
 
     public void setResult(boolean result) {
