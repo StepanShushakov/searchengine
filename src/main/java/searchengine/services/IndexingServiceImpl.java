@@ -135,11 +135,10 @@ public class IndexingServiceImpl implements IndexingService {
         List<Page> pages = pageRepository.findByPortalAndPath(portal, url.getPath());
 
         if (pages.size() == 0) {
-            Link link = new Link(new PageDescription(url.getProtocol() + "://" + url.getHost() + url.getPath()
+            new Link(new PageDescription(url.getProtocol() + "://" + url.getHost() + url.getPath()
                                                         ,portal, url.getHost().equals(portal.getUrl()))
                         ,new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository, indexRepository)
-                        ,new ConnectionPerformance(this.userAgent, this.referrer)
-            );
+                        ,new ConnectionPerformance(this.userAgent, this.referrer));
         } else {
             for (Page page: pages) {
                 Link.setRepositories(new RepositoriesFactory(portalRepository, pageRepository, lemmaRepository, indexRepository));

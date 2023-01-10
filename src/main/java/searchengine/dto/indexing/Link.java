@@ -10,6 +10,7 @@ import searchengine.model.Lemma;
 import searchengine.model.Page;
 import searchengine.model.Portal;
 import searchengine.records.ConnectionPerformance;
+import searchengine.records.IndexingParameters;
 import searchengine.records.PageDescription;
 import searchengine.records.RepositoriesFactory;
 
@@ -58,7 +59,7 @@ public class Link {
         if (repositories == null) repositories = inputRepositories;
         String pagePath;
         pagePath = getPathByStringUrl(pageDescription.url());
-        if (linkIsAdded(pageDescription.portal(), pagePath)) return;
+//        if (linkIsAdded(pageDescription.portal(), pagePath)) return;
         Page page = new Page();
         Portal portal = pageDescription.portal();
         page.setPortal(portal);
@@ -70,15 +71,20 @@ public class Link {
         if (doc == null) return;
         page.setContent(doc.toString());
         savePage(page);
-        if (pageDescription.isParent()) new Thread(() -> {indexPage(page, doc, true);}).start();
+        if (pageDescription.isParent()) new Thread(() -> indexPage(page, doc, true)).start();
         else indexPage(page, doc, true);
         setChildrenLinks(doc);
     }
 
     public static void indexPage(Page page, Document doc, boolean isNew) {
+        if (doc == null) return;
         try {
-            indexTag(page, doc.title(), 1, isNew);
-            indexTag(page, doc.body().text(), 0.8F, isNew);
+            indexTag(page,
+                    doc.title(),
+                    new IndexingParameters(1, isNew));
+            indexTag(page,
+                    doc.body().text(),
+                    new IndexingParameters(0.8F, isNew));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -93,9 +99,9 @@ public class Link {
                     .get();
             page.setCode(doc.connection().response().statusCode());
         } catch (HttpStatusException e) {
-            saveWithStatusCode(e.getStatusCode(), e.toString(), page, portal);
+            saveWithStatusCode(e.getStatusCode(), e.toString(), page);
         } catch (Exception e) {
-            saveWithStatusCode(0, e.toString(), page, portal);
+            saveWithStatusCode(0, e.toString(), page);
         }
         return doc;
     }
@@ -108,10 +114,10 @@ public class Link {
         }
     }
 
-    public static void saveWithStatusCode(int statusCode, String error, Page page, Portal portal) {
+    public static void saveWithStatusCode(int statusCode, String error, Page page) {
         page.setCode(statusCode);
         page.setContent(error);
-        portal.setLastError(error);
+        page.getPortal().setLastError(error);
         savePage(page);
     }
 
@@ -131,10 +137,8 @@ public class Link {
     private boolean linkIsCorrect(String childrenLink) {
         boolean hostIsCorrect;
         try {
-            URL url2Verift = new URL(childrenLink);
-            hostIsCorrect = (url2Verift.getProtocol()
-                                + "://"
-                                + url2Verift.getHost().replaceAll("^www.", ""))
+            URL url2Verify = new URL(childrenLink);
+            hostIsCorrect = (getPortalMainUrl(url2Verify))
                     .equals(this.pageDescription.portal().getUrl());
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
@@ -160,7 +164,7 @@ public class Link {
 
     private static void savePage(Page page) {
         Portal portal = page.getPortal();
-        if (linkIsAdded(portal, page.getPath())) return;
+//        if (linkIsAdded(portal, page.getPath())) return;
         repositories.pageRepository().save(page);
         savePortal(portal);
     }
@@ -174,7 +178,7 @@ public class Link {
         return repositories.pageRepository().findByPortalAndPath(portal, path).size() != 0;
     }
 
-    public static /*synchronized*/ void indexTag(Page page, String text, float ratio, Boolean isNew) throws IOException {
+    public static void indexTag(Page page, String text, IndexingParameters parameters) throws IOException {
         Map<String, Integer > lemmas = lemmaInstance.collectLemmas(text);
         lemmas.forEach((lemma, rank) -> {
            List<Lemma> lemmasList = repositories.lemmaRepository().findByPortalAndLemma(page.getPortal(), lemma);
@@ -187,10 +191,13 @@ public class Link {
            }
             lemmaRecord.setLemma(lemma);
 
-           if (isNew) lemmaRecord.setFrequency(lemmaRecord.getFrequency() + 1); //если лемма встетится как в
-                                                                                // head так и в body посчитаем её
-                                                                                //дважды, пока не будем думать,
-                                                                                //что это ошибка
+           if (parameters.isNew()) lemmaRecord
+                   .setFrequency(lemmaRecord.getFrequency() + 1);   //если лемма встетится как в
+                                                                    //head так и в body посчитаем её
+                                                                    //дважды, пока не будем думать,
+                                                                    //что это ошибка, пусть вероятность
+                                                                    //встречи леммы в разных тегах
+                                                                    //увеличивает frequency страницы
            repositories.lemmaRepository().save(lemmaRecord);
            List<IndexEntity> indexes = repositories.indexRepository().findByPageAndLemma(page, lemmaRecord);
            IndexEntity index;
@@ -198,7 +205,7 @@ public class Link {
            else index = new IndexEntity();
            index.setPage(page);
            index.setLemma(lemmaRecord);
-           index.setRank(rank * ratio);
+           index.setRank(rank * parameters.ratio());
            repositories.indexRepository().save(index);
         });
     }

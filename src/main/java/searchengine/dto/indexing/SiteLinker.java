@@ -89,6 +89,7 @@ public class SiteLinker extends RecursiveAction {
 
     public static void setIndexingStarted(boolean indexingStarted) {
         SiteLinker.indexingStarted = indexingStarted;
+        if (indexingStarted) setStopCrawling(false);
     }
 
     public static boolean indexingStarted() {
