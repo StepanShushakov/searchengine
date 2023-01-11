@@ -1,4 +1,4 @@
-package searchengine.dto.indexing;
+package searchengine.services.supportingServices;
 
 import com.google.common.util.concurrent.Uninterruptibles;
 import org.jsoup.HttpStatusException;
@@ -27,7 +27,7 @@ public class Link {
     private PageDescription pageDescription;
     private static RepositoriesFactory repositories;
     private static ConnectionPerformance connectionPerformance;
-    private static LemmaFinder lemmaInstance;
+    private static final LemmaFinder lemmaInstance;
 
     static {
         try {

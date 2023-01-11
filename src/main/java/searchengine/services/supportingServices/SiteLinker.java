@@ -1,4 +1,4 @@
-package searchengine.dto.indexing;
+package searchengine.services.supportingServices;
 
 import lombok.SneakyThrows;
 import searchengine.model.IndexStatus;
