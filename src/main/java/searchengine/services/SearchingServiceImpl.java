@@ -39,8 +39,8 @@ public class SearchingServiceImpl implements SearchingService{
     public SearchingResponse search(SearchRequest searchRequest) {
         String lemmas = provideLemmasSetToString(getLemmaSet(searchRequest.getQuery()));
         String siteUrl = searchRequest.getSite();
-        ArrayList<LemmasFrequency> lemmas2Search = getLemmas2Search(lemmas
-                ,(siteUrl == null ? "" : "\nand s.url = '" + siteUrl + "'"));
+        ArrayList<LemmasFrequency> lemmas2Search = /*getLemmas2SearchOverInputQuery*/getLemmas2Search(lemmas
+                ,(siteUrl == null ? "" : "\n\tand s.url = '" + siteUrl + "'"));
         String foundPageId = findPageId(lemmas2Search, siteUrl);
         if (foundPageId.isEmpty()) return blankResponse();
         getRelevance(replaceStartEndArraysSymbols(lemmas2Search.toString()), foundPageId);
@@ -63,6 +63,7 @@ public class SearchingServiceImpl implements SearchingService{
                 System.out.println("\trelevance = " + rs.getFloat("relevance"));
                 String content = rs.getString("content");
                 System.out.println("\ttitle = " + getTitleFromContent(content));
+                System.out.println("\tsnippet = " + getSnippetFromBodyContent(content));
                 System.out.println();
             }
             dropTempTables();
@@ -72,7 +73,15 @@ public class SearchingServiceImpl implements SearchingService{
     }
 
     private String getTitleFromContent(String content) {
-        return content.substring(content.indexOf("title") + 6, content.lastIndexOf("</title>"));
+        return getTextFromTag(content,"title", 8);
+    }
+
+    private String getSnippetFromBodyContent(String content) {
+        return getTextFromTag(content, "body", 7);
+    }
+
+    private String getTextFromTag(String content, String tag, int i) {
+        return content.substring(content.indexOf("<" + tag + ">") + i, content.lastIndexOf("</" + tag +">"));
     }
 
     private void dropTempTables() throws SQLException {
@@ -187,11 +196,11 @@ public class SearchingServiceImpl implements SearchingService{
                     inner join `index` i
                         on l.id = i.lemma_id
                         and l.lemma = '""" + lemma + "'"
-                            + (pagesId.isEmpty() ? "" : "\n   and page_id in (" + pagesId + ")"
+                            + (pagesId.isEmpty() ? "" : "\n   and page_id in (" + pagesId + ")")
                             + (siteUrl == null ? "" : """
-                    \ninner join site
-                        on i.site_id =  s.id
-                        and s.url = '""" + siteUrl + "'"))
+                    \ninner join site s
+                        on l.site_id =  s.id
+                        and s.url = '""" + siteUrl + "'")
                     );
             StringBuilder newId = new StringBuilder();
             while (rs.next()) {
@@ -207,7 +216,7 @@ public class SearchingServiceImpl implements SearchingService{
         return lemmaInstance.collectLemmas(query).keySet();
     }
 
-    private ArrayList<LemmasFrequency> getLemmas2Search(String lemmas, String siteCondition) {
+    private ArrayList<LemmasFrequency> getLemmas2SearchOverInputQuery(String lemmas, String siteCondition) {
         try {
             if (this.connection == null ||
                     this.connection.isClosed()) {
@@ -231,6 +240,36 @@ public class SearchingServiceImpl implements SearchingService{
                 totalCount = totalCount + rs.getInt("frequency");
             }
             removeOftenKeys(result, totalCount);
+            return result;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ArrayList<LemmasFrequency> getLemmas2Search(String lemmas, String siteCondition) {
+        try {
+            if (this.connection == null ||
+                    this.connection.isClosed()) {
+                this.connection = DriverManager.getConnection(DBUrl, DBUserName, DBPassword);
+                this.statement = connection.createStatement();
+            }
+            ResultSet rs = this.statement.executeQuery("""
+                    with page_count as (
+                    select count(p.id) `value`
+                    from page p
+                    inner join site s\non p.code = 200\n	and p.site_id = s.id""" + siteCondition + """
+                    )
+                    select
+                    	l.lemma,\n    sum(l.frequency) / max(pc.`value`) part
+                    from lemma l
+                    inner join site s\non l.site_id = s.id\n	and l.lemma in (""" + lemmas + ")" + siteCondition + """  
+                    \ninner join page_count pc
+                    group by l.lemma
+                    having sum(l.frequency) / max(pc.`value`) < 0.10
+                    order by part
+                    """);
+            ArrayList<LemmasFrequency> result = new ArrayList<>();
+            while (rs.next()) result.add(new LemmasFrequency(rs.getString("lemma"), 0));
             return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
