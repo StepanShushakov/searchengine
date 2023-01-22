@@ -71,6 +71,7 @@ public class IndexingServiceImpl implements IndexingService {
                 portalRepository.delete(portal);
             }
             Portal newPortal = createPortalBySite(site, portalUrl);
+            SiteLinker.initVerifySer();
             CrawlStarter.setRepositoriesFactory(new RepositoriesFactory(portalRepository,
                                                                             pageRepository,
                                                                             lemmaRepository,

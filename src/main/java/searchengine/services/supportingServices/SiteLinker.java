@@ -18,7 +18,7 @@ public class SiteLinker extends RecursiveAction {
     private static RepositoriesFactory repositories;
     private static ConnectionPerformance connectionPerformance;
     private static Boolean stopCrawling = false;
-    private static final Set<String> verifySet = ConcurrentHashMap.newKeySet();
+    private static Set<String> verifySet;
     private static boolean indexingStarted = false;
 
     public SiteLinker(String url, Portal portal, boolean isNew) {
@@ -88,5 +88,9 @@ public class SiteLinker extends RecursiveAction {
 
     public static boolean indexingStarted() {
         return indexingStarted;
+    }
+
+    public static void initVerifySer () {
+        SiteLinker.verifySet = ConcurrentHashMap.newKeySet();
     }
 }

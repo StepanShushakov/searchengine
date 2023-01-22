@@ -19,16 +19,16 @@ spring:
 
 indexing-settings:
   sites:
-    - url: https://www.lenta.ru
-      name: Лента.ру
-    - url: https://www.skillbox.ru
-      name: Skillbox
-    - url: https://www.playback.ru
-      name: PlayBack.Ru
-    - url: https://1cistline.ru/
-      name: Истлайн
-    - url: http://www.cimus.biz
-      name: Цимус
+#    - url: https://www.lenta.ru
+#      name: Лента.ру
+#    - url: https://www.skillbox.ru
+#      name: Skillbox
+#    - url: https://www.playback.ru
+#      name: PlayBack.Ru
+#    - url: https://1cistline.ru/
+#      name: Истлайн
+#    - url: http://www.cimus.biz
+#      name: Цимус
     - url: https://strike-ball.ru
       name: Магазин "Легион"
 

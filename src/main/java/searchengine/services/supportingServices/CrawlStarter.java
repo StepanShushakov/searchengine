@@ -8,12 +8,15 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 
 public class CrawlStarter implements Runnable{
-    private static final ForkJoinPool pool = new ForkJoinPool();
+    private static ForkJoinPool pool = new ForkJoinPool();
     private final Portal portal;
     private static RepositoriesFactory repositories;
     private static ConnectionPerformance connectionPerformance;
 
     public CrawlStarter(Portal portal) {
+        if (CrawlStarter.pool.isShutdown() && SiteLinker.indexingStarted()) {
+            CrawlStarter.pool = new ForkJoinPool();
+        }
         this.portal = portal;
         SiteLinker.setRepositories(CrawlStarter.repositories);
         SiteLinker.setConnectionPerformance(CrawlStarter.connectionPerformance);
