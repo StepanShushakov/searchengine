@@ -220,6 +220,7 @@ public class Link {
 
     public static String getPath(String string) throws MalformedURLException {
         URL url = getUrlFromString(string);
-        return url.getPath();
+        String path = url.getPath();
+        return path.isBlank() ? "/" : path;
     }
 }

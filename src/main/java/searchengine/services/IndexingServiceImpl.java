@@ -103,6 +103,7 @@ public class IndexingServiceImpl implements IndexingService {
         else {
             SiteLinker.setStopCrawling(true);
             SiteLinker.setIndexingStarted(false);
+            List<Portal> indexingPortals = portalRepository.findByStatus(IndexStatus.INDEXING);
             pool.shutdown();
             try {
                 if ((!pool.awaitTermination(800, TimeUnit.MILLISECONDS))) pool.shutdownNow();
@@ -110,8 +111,7 @@ public class IndexingServiceImpl implements IndexingService {
                 pool.shutdownNow();
             }
             while (pool.getPoolSize() > 0);  //подождем, пока завершатся задачи пула потоков
-            List<Portal> portals = portalRepository.findAll();
-            portals.forEach(portal -> {
+            indexingPortals.forEach(portal -> {
                 portal.setStatus(IndexStatus.FAILED);
                 portal.setLastError("Индексация остановлена пользователем");
                 portal.setStatusTime(new Date());
