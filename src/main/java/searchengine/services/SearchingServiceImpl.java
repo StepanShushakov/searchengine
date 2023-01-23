@@ -3,6 +3,7 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import searchengine.records.SearchingSettings;
 import searchengine.services.supportingServices.LemmaFinder;
 import searchengine.dto.searching.SearchingResponse;
 import searchengine.records.LemmasFrequency;
@@ -37,19 +38,24 @@ public class SearchingServiceImpl implements SearchingService{
 
     @Override
     public SearchingResponse search(SearchRequest searchRequest) {
-        String lemmas = provideLemmasSetToString(getLemmaSet(searchRequest.getQuery()));
+        String lemmas = provideLemmasArrayToString(getLemmaArray(searchRequest.getQuery()));
         String siteUrl = searchRequest.getSite();
-        ArrayList<LemmasFrequency> lemmas2Search = /*getLemmas2SearchOverInputQuery*/getLemmas2Search(lemmas
-                ,(siteUrl == null ? "" : "\n\tand s.url = '" + siteUrl + "'"));
+        String siteCondition = siteUrl == null ? "" : "\n\tand s.url = '" + siteUrl + "'";
+        ArrayList<String> lemmas2Search = getLemmas2Search(lemmas
+                ,siteCondition);
         String foundPageId = findPageId(lemmas2Search, siteUrl);
         if (foundPageId.isEmpty()) return blankResponse();
-        getRelevance(replaceStartEndArraysSymbols(lemmas2Search.toString()), foundPageId);
+        getRelevance(provideLemmasArrayToString(lemmas2Search),
+                foundPageId,
+                new SearchingSettings(siteCondition,
+                        searchRequest.getLimit()));
         return null;
     }
 
-    private void getRelevance(String lemmas, String pageId) {
+    private void getRelevance(String lemmas, String pageId, SearchingSettings ss) {
         try {
-            createTempTables(lemmas, pageId);
+            createTempTables(lemmas, pageId, ss);
+            long m1 = System.currentTimeMillis();
             ResultSet rs = statement.executeQuery("""
                     select
                     	p.uri,
@@ -57,27 +63,34 @@ public class SearchingServiceImpl implements SearchingService{
                         r.relevance
                     from temp_rel as r
                     left join temp_page as p
-                    	on r.page_id = p.id""");
+                    	on r.page_id = p.id
+                    order by
+                        r.relevance desc
+                    limit 0,""" + ss.limit());
+            long m2 = System.currentTimeMillis();
+            System.out.println("main SQL " + (m2 - m1));
             while (rs.next()) {
                 System.out.println("\turi = " + rs.getString("uri"));
                 System.out.println("\trelevance = " + rs.getFloat("relevance"));
                 String content = rs.getString("content");
                 System.out.println("\ttitle = " + getTitleFromContent(content));
-                System.out.println("\tsnippet = " + getSnippetFromBodyContent(content));
+                //System.out.println("\tsnippet = " + getSnippetFromBodyContent(content));
                 System.out.println();
             }
             dropTempTables();
+            long m3 = System.currentTimeMillis();
+            System.out.println("dropTempTables " + (m3 - m2));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
     private String getTitleFromContent(String content) {
-        return getTextFromTag(content,"title", 8);
+        return getTextFromTag(content,"title", 7);
     }
 
     private String getSnippetFromBodyContent(String content) {
-        return getTextFromTag(content, "body", 7);
+        return getTextFromTag(content, "body", 6);
     }
 
     private String getTextFromTag(String content, String tag, int i) {
@@ -94,19 +107,30 @@ public class SearchingServiceImpl implements SearchingService{
         statement.executeBatch();
     }
 
-    private void createTempTables(String lemmas, String pageId) throws SQLException {
-        statement.addBatch(queryLemmasTable(lemmas));
-        statement.addBatch(queryPagesTable(pageId));
+    private void createTempTables(String lemmas, String pageId, SearchingSettings ss) throws SQLException {
+        long start = System.currentTimeMillis();
+        statement.addBatch(queryLemmasTable(lemmas, ss.siteCondition()));
+        statement.addBatch(queryPagesTable(pageId, ss.siteCondition()));
+        statement.addBatch("create index id_index on temp_page (id)");
         statement.executeBatch();
+        long b1 = System.currentTimeMillis();
+        System.out.println("batch1 " + (b1 - start));
         statement.addBatch(queryAbsRelevanceTable());
         statement.executeBatch();
+        long b2 = System.currentTimeMillis();
+        System.out.println("batch2 " + (b2 - b1));
         statement.addBatch(queryMaxRelevanceTable());
         statement.executeBatch();
-        statement.addBatch(queryRelRelevanceTable());
+        long b3 = System.currentTimeMillis();
+        System.out.println("batch3 " + (b3 - b2));
+        statement.addBatch(queryRelRelevanceTable(ss.limit()));
+        statement.addBatch("create index id_page_index on temp_rel (page_id)");
         statement.executeBatch();
+        long b4 = System.currentTimeMillis();
+        System.out.println("batch4 " + (b4 - b3));
     }
 
-    private String queryRelRelevanceTable() {
+    private String queryRelRelevanceTable(int limit) {
         return """
                 create temporary table temp_rel
                 	select
@@ -116,7 +140,8 @@ public class SearchingServiceImpl implements SearchingService{
                     inner join temp_max tm
                 		on true
                 	order by
-                		ta.r / tm.max desc""";
+                		ta.r / tm.max desc
+                	-- limit 0,""" + limit;
     }
 
     private String queryMaxRelevanceTable() {
@@ -138,7 +163,7 @@ public class SearchingServiceImpl implements SearchingService{
                     p.id""";
     }
 
-    private String queryPagesTable(String pageId) {
+    private String queryPagesTable(String pageId, String siteCondition) {
         return """
                 create temporary table temp_page
                 	select
@@ -146,10 +171,12 @@ public class SearchingServiceImpl implements SearchingService{
                         p.content,
                         p.id
                 	from page p
-                    where p.id in (""" + pageId + ")";
+                	inner join site s
+                	    on p.site_id = s.id""" + siteCondition + """
+                \n\t\tand p.id in (""" + pageId + ")";
     }
 
-    private String queryLemmasTable(String lemmas) {
+    private String queryLemmasTable(String lemmas, String siteCondition) {
         return """
                 create temporary table temp_lemmas
                 	select
@@ -159,8 +186,11 @@ public class SearchingServiceImpl implements SearchingService{
                         i.rank
                 	from lemma l
                 	inner join `index` i
-                    on l.id = i.lemma_id
-                	where l.lemma in (""" + lemmas + ")";
+                        on l.id = i.lemma_id
+                        and l.lemma in (""" + lemmas + """
+                )
+                inner join site s
+                    on l.site_id = s.id""" + siteCondition;
     }
 
     private SearchingResponse blankResponse() {
@@ -168,7 +198,7 @@ public class SearchingServiceImpl implements SearchingService{
         return new SearchingResponse();
     }
 
-    private String provideLemmasSetToString(Set<String> lemmas) {
+    private String provideLemmasArrayToString(ArrayList<String> lemmas) {
         return "'" + replaceStartEndArraysSymbols(lemmas.toString())
                 .replaceAll(", ", "', '") + "'";
     }
@@ -177,10 +207,10 @@ public class SearchingServiceImpl implements SearchingService{
         return string.replace("[", "").replace("]", "");
     }
 
-    private String findPageId(ArrayList<LemmasFrequency> lemmas2Search, String siteUrl) {
+    private String findPageId(ArrayList<String> lemmas2Search, String siteUrl) {
         AtomicReference<String> pagesId = new AtomicReference<>("");
-        for (LemmasFrequency lf : lemmas2Search) {
-            String newPageId = searchPages(lf.lemma(), pagesId.get(), siteUrl);
+        for (String lf : lemmas2Search) {
+            String newPageId = searchPages(lf, pagesId.get(), siteUrl);
             pagesId.set(newPageId);
             if (newPageId.isEmpty()) break;
         }
@@ -212,8 +242,10 @@ public class SearchingServiceImpl implements SearchingService{
         }
     }
 
-    private Set<String> getLemmaSet(String query) {
-        return lemmaInstance.collectLemmas(query).keySet();
+    private ArrayList<String> getLemmaArray(String query) {
+        ArrayList<String> lemmaArray = new ArrayList<>();
+        lemmaArray.addAll(lemmaInstance.collectLemmas(query).keySet());
+        return lemmaArray;
     }
 
     private ArrayList<LemmasFrequency> getLemmas2SearchOverInputQuery(String lemmas, String siteCondition) {
@@ -246,7 +278,7 @@ public class SearchingServiceImpl implements SearchingService{
         }
     }
 
-    private ArrayList<LemmasFrequency> getLemmas2Search(String lemmas, String siteCondition) {
+    private ArrayList<String> getLemmas2Search(String lemmas, String siteCondition) {
         try {
             if (this.connection == null ||
                     this.connection.isClosed()) {
@@ -265,11 +297,11 @@ public class SearchingServiceImpl implements SearchingService{
                     inner join site s\non l.site_id = s.id\n	and l.lemma in (""" + lemmas + ")" + siteCondition + """  
                     \ninner join page_count pc
                     group by l.lemma
-                    having sum(l.frequency) / max(pc.`value`) < 0.10
+                    having sum(l.frequency) / max(pc.`value`) < 0.85
                     order by part
                     """);
-            ArrayList<LemmasFrequency> result = new ArrayList<>();
-            while (rs.next()) result.add(new LemmasFrequency(rs.getString("lemma"), 0));
+            ArrayList<String> result = new ArrayList<>();
+            while (rs.next()) result.add(rs.getString("lemma"));
             return result;
         } catch (SQLException e) {
             throw new RuntimeException(e);
