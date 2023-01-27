@@ -79,8 +79,8 @@ public class IndexingServiceImpl implements IndexingService {
             CrawlStarter.setConnectionPerformance(new ConnectionPerformance(userAgent, referrer));
             executor.submit(new CrawlStarter(newPortal));
         }
-        closeStatementConnection();
         executor.shutdown();
+        closeStatementConnection();
         return response;
     }
 
@@ -198,10 +198,12 @@ public class IndexingServiceImpl implements IndexingService {
                 this.connection = DriverManager.getConnection(DBUrl, DBUserName, DBPassword);
                 this.statement = connection.createStatement();
             }
+            this.connection.setAutoCommit(false);
             this.statement.execute( "delete from `index` where page_id in " +
                     "(select id from page where site_id = " + portal.getId() + ")");
             this.statement.execute("delete from lemma where site_id = " + portal.getId());
             this.statement.execute("delete from page where site_id = " + portal.getId());
+            this.connection.commit();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
