@@ -83,6 +83,10 @@ public class LemmaFinder {
         return lemmaSet;
     }
 
+    public String getNormalForm(String word){
+        return luceneMorphology.getNormalForms(word).get(0);
+    }
+
     private boolean anyWordBaseBelongToParticle(List<String> wordBaseForms) {
         return wordBaseForms.stream().anyMatch(this::hasParticleProperty);
     }
