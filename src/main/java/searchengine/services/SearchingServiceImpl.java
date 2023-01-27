@@ -47,16 +47,18 @@ public class SearchingServiceImpl implements SearchingService{
 
     @Override
     public SearchingResponse search(SearchRequest searchRequest) {
-        String lemmas = provideCollectionsToQueryParameter(getLemmasSet(searchRequest.getQuery()));
+        String lemmas = provideCollectionToQueryParameter(getLemmasSet(searchRequest.getQuery()));
         String siteUrl = searchRequest.getSite();
         String siteCondition = siteUrl == null ? "" : "\n\tand s.url = '" + siteUrl + "'";
         HashSet<String> lemmas2Search = getLemmas2Search(lemmas
                 ,siteCondition);
         String foundPageId = findPageId(lemmas2Search, siteUrl);
-        if (foundPageId.isEmpty()) return blankResponse();
-        ArrayList<PageRelevance> foundRelevance = getRelevance(provideCollectionsToQueryParameter(lemmas2Search),
+        if (foundPageId.isEmpty()) return notFoundResponse();
+        ArrayList<PageRelevance> foundRelevance = getRelevance(provideCollectionToQueryParameter(lemmas2Search),
                 foundPageId,
                 new SearchingSettings(searchRequest.getOffset(), searchRequest.getLimit()));
+        closeStatementConnection();
+
         SearchingResponse response = new SearchingResponse();
         response.setCount(foundRelevance.get(0).totalCount());
         response.setData(processingFoundPage(foundRelevance, lemmas2Search));
@@ -85,9 +87,12 @@ public class SearchingServiceImpl implements SearchingService{
             ResultSet rs = statement.executeQuery(getRelevanceQueryText(lemmas, pageId, ss));
             ArrayList<PageRelevance> result = new ArrayList<>();
             while (rs.next()) {
-                result.add(new PageRelevance(pageRepository.findById(rs.getInt("page_id")).get(),
-                        rs.getFloat("relevance"),
-                        rs.getInt("total_count")));
+                Optional<Page> optPage = pageRepository.findById(rs.getInt("page_id"));
+                if (optPage.isPresent()) {
+                    result.add(new PageRelevance(optPage.get(),
+                            rs.getFloat("relevance"),
+                            rs.getInt("total_count")));
+                }
             }
             return result;
         } catch (SQLException e) {
@@ -156,12 +161,15 @@ public class SearchingServiceImpl implements SearchingService{
         return sb.toString();
     }
 
-    private SearchingResponse blankResponse() {
+    private SearchingResponse notFoundResponse() {
         closeStatementConnection();
-        return new SearchingResponse();
+        SearchingResponse response = new SearchingResponse();
+        response.setResult(false);
+        response.setError("Ничего не найдено");
+        return response;
     }
 
-    private String provideCollectionsToQueryParameter(Set<String> lemmas) {
+    private String provideCollectionToQueryParameter(Set<String> lemmas) {
         return "'" + replaceStartEndArraysSymbols(lemmas.toString())
                 .replaceAll(", ", "', '") + "'";
     }
