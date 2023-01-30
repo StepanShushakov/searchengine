@@ -1,8 +1,6 @@
 package searchengine.services.supportingServices;
 
 import searchengine.model.Portal;
-import searchengine.records.ConnectionPerformance;
-import searchengine.records.RepositoriesFactory;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
@@ -10,24 +8,12 @@ import java.util.concurrent.ForkJoinTask;
 public class CrawlStarter implements Runnable{
     private static ForkJoinPool pool = new ForkJoinPool();
     private final Portal portal;
-    private static RepositoriesFactory repositories;
-    private static ConnectionPerformance connectionPerformance;
 
     public CrawlStarter(Portal portal) {
         if (CrawlStarter.pool.isShutdown() && SiteLinker.indexingStarted()) {
             CrawlStarter.pool = new ForkJoinPool();
         }
         this.portal = portal;
-        SiteLinker.setRepositories(CrawlStarter.repositories);
-        SiteLinker.setConnectionPerformance(CrawlStarter.connectionPerformance);
-    }
-
-    public static void setRepositoriesFactory(RepositoriesFactory repositories) {
-        if (CrawlStarter.repositories == null) CrawlStarter.repositories = repositories;
-    }
-
-    public static void setConnectionPerformance(ConnectionPerformance connectionPerformance) {
-        if (CrawlStarter.connectionPerformance == null) CrawlStarter.connectionPerformance = connectionPerformance;
     }
 
     public static Integer getPoolSize() {
@@ -40,7 +26,7 @@ public class CrawlStarter implements Runnable{
                                                                     portal,
                                                                     true));
         parentTask.join();
-        pool.shutdown();
+        //pool.shutdown();
     }
 
     public static ForkJoinPool getPool() {

@@ -54,11 +54,11 @@ public class SiteLinker extends RecursiveAction {
         }
         if (this.pageDescription.isParent()) {
             Portal portal = this.getPageDescription().portal();
-            portal.setStatus(IndexStatus.INDEXED);
+            portal.setStatus(portal.isErrorMainPage() ? IndexStatus.FAILED : IndexStatus.INDEXED);
             portal.setStatusTime(new Date());
             PortalRepository portalRepository = this.getRepositories().portalRepository();
             portalRepository.save(portal);
-            if (portalRepository.countByStatusNot(IndexStatus.INDEXED) == 0) {
+            if (portalRepository.countByStatus(IndexStatus.INDEXING) == 0) {
                 SiteLinker.setIndexingStarted(false);
             }
         }
@@ -90,7 +90,7 @@ public class SiteLinker extends RecursiveAction {
         return indexingStarted;
     }
 
-    public static void initVerifySer () {
+    public static void initVerifySet() {
         SiteLinker.verifySet = ConcurrentHashMap.newKeySet();
     }
 }

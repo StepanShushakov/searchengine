@@ -9,9 +9,9 @@ import java.util.List;
 
 @Repository
 public interface PortalRepository extends JpaRepository<Portal, Integer> {
-    long countByStatusNot(IndexStatus status);
-
     Portal findByUrl(String s);
 
     List<Portal> findByStatus(IndexStatus indexStatus);
+
+    int countByStatus(IndexStatus status);
 }

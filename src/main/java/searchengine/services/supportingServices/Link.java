@@ -17,6 +17,7 @@ import searchengine.records.RepositoriesFactory;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -68,7 +69,11 @@ public class Link {
         this.pageDescription = pageDescription;
         if (connectionPerformance == null) connectionPerformance = inputConnectionPerformance;
         Document doc = getDoc(page, portal);
-        if (doc == null) return;
+        if (doc == null) {
+            if (this.pageDescription.isParent()) portal.setErrorMainPage(true);
+            portal.setLastError("Ошибка индексации: гавная страница сайта не доступна");
+            return;
+        }
         page.setContent(doc.toString());
         savePage(page);
         if (pageDescription.isParent()) new Thread(() -> indexPage(page, doc, true)).start();
@@ -100,8 +105,10 @@ public class Link {
             page.setCode(doc.connection().response().statusCode());
         } catch (HttpStatusException e) {
             saveWithStatusCode(e.getStatusCode(), e.toString(), page);
+        } catch (UnknownHostException e) {
+            saveWithStatusCode(405, e.toString(), page);    //405 Method Not Allowed — указанный клиентом метод нельзя применить к текущему ресурсу.
         } catch (Exception e) {
-            saveWithStatusCode(0, e.toString(), page);
+            saveWithStatusCode(500, e.toString(), page);    //500 Internal Server Error — любая внутренняя ошибка сервера, которая не входит в рамки остальных ошибок
         }
         return doc;
     }

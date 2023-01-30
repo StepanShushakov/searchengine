@@ -63,6 +63,12 @@ public class IndexingServiceImpl implements IndexingService {
         if (SiteLinker.indexingStarted()) return responseError(response, "Индексация уже запущена");
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         SiteLinker.setIndexingStarted(true);
+        SiteLinker.initVerifySet();
+        SiteLinker.setRepositories(new RepositoriesFactory(portalRepository,
+                pageRepository,
+                lemmaRepository,
+                indexRepository));
+        SiteLinker.setConnectionPerformance(new ConnectionPerformance(userAgent, referrer));
         for (Site site : sites.getSites()) {
             String portalUrl = site.getUrl();
             Portal portal = portalRepository.findByUrl(portalUrl);
@@ -71,12 +77,6 @@ public class IndexingServiceImpl implements IndexingService {
                 portalRepository.delete(portal);
             }
             Portal newPortal = createPortalBySite(site, portalUrl);
-            SiteLinker.initVerifySer();
-            CrawlStarter.setRepositoriesFactory(new RepositoriesFactory(portalRepository,
-                                                                            pageRepository,
-                                                                            lemmaRepository,
-                                                                            indexRepository));
-            CrawlStarter.setConnectionPerformance(new ConnectionPerformance(userAgent, referrer));
             executor.submit(new CrawlStarter(newPortal));
         }
         executor.shutdown();

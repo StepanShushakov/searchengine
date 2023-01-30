@@ -35,6 +35,8 @@ public class Portal {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "portal")
     private List<Lemma> lemmas;
 
+    transient private boolean errorMainPage;
+
     public int getId() {
         return id;
     }
@@ -97,6 +99,14 @@ public class Portal {
 
     public void setLemmas(List<Lemma> lemmas) {
         this.lemmas = lemmas;
+    }
+
+    public boolean isErrorMainPage() {
+        return errorMainPage;
+    }
+
+    public void setErrorMainPage(boolean errorMainPage) {
+        this.errorMainPage = errorMainPage;
     }
 
     @Override
