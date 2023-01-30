@@ -47,13 +47,15 @@ public class SearchingServiceImpl implements SearchingService{
 
     @Override
     public SearchingResponse search(SearchRequest searchRequest) {
-        String lemmas = provideCollectionToQueryParameter(getLemmasSet(searchRequest.getQuery()));
+        String query = searchRequest.getQuery();
+        if (query.isBlank()) return errorFoundResponse("Задан пустой поисковый запрос");
+        String lemmas = provideCollectionToQueryParameter(getLemmasSet(query));
         String siteUrl = searchRequest.getSite();
         String siteCondition = siteUrl == null ? "" : "\n\tand s.url = '" + siteUrl + "'";
         HashSet<String> lemmas2Search = getLemmas2Search(lemmas
                 ,siteCondition);
         String foundPageId = findPageId(lemmas2Search, siteUrl);
-        if (foundPageId.isEmpty()) return notFoundResponse();
+        if (foundPageId.isEmpty()) return errorFoundResponse("Ничего не найдено");
         ArrayList<PageRelevance> foundRelevance = getRelevance(provideCollectionToQueryParameter(lemmas2Search),
                 foundPageId,
                 new SearchingSettings(searchRequest.getOffset(), searchRequest.getLimit()));
@@ -161,11 +163,17 @@ public class SearchingServiceImpl implements SearchingService{
         return sb.toString();
     }
 
-    private SearchingResponse notFoundResponse() {
+    private SearchingResponse errorResponse() {
+        SearchingResponse response = new SearchingResponse();
+        response.setResult(false);
+        return response;
+    }
+
+    private SearchingResponse errorFoundResponse(String errorText) {
         closeStatementConnection();
         SearchingResponse response = new SearchingResponse();
         response.setResult(false);
-        response.setError("Ничего не найдено");
+        response.setError(errorText);
         return response;
     }
 

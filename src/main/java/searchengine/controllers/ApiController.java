@@ -35,12 +35,12 @@ public class ApiController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<IndexingResponse> startIndexing() {
-        return ResponseEntity.ok(indexingService.startIndexing());
+        return indexingResponseEntity(indexingService.startIndexing());
     }
 
     @GetMapping("/stopIndexing")
     public ResponseEntity<IndexingResponse> stopIndexing() {
-        return ResponseEntity.ok(indexingService.stopIndexing());
+        return indexingResponseEntity(indexingService.stopIndexing());
     }
 
     @GetMapping("/echo")
@@ -55,7 +55,12 @@ public class ApiController {
 
     @PostMapping("/indexPage")
     public ResponseEntity<IndexingResponse> indexPage(IndexPage indexPage){
-        return ResponseEntity.ok(indexingService.indexPage(indexPage));
+        return indexingResponseEntity(indexingService.indexPage(indexPage));
+    }
+
+    private ResponseEntity<IndexingResponse> indexingResponseEntity(IndexingResponse response) {
+        if (response.isResult()) return ResponseEntity.ok(response);
+        else return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @RequestMapping(value = "/search", method = RequestMethod.GET)
@@ -65,6 +70,8 @@ public class ApiController {
                                                                   @RequestParam (defaultValue = "20") int limit) {
         SearchingResponse response = searchingService.search(new SearchRequest(query, site, offset, limit));
         if (response.isResult()) return ResponseEntity.ok(response);
-        else return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        else if (response.getError().equals("Задан пустой поисковый запрос"))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        else return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 }
