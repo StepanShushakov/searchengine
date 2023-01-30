@@ -45,5 +45,5 @@ indexing-settings:
 #      name: DimonVideo - программы | игры | фильмы | книги
 
 jsoupFakePerformance:
-  userAgent: GamaSearchEngine
+  userAgent: EasySimpleSearchEngine
   referrer: http://www.searcher.mu
