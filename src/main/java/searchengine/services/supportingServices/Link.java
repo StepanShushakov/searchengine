@@ -70,8 +70,10 @@ public class Link {
         if (connectionPerformance == null) connectionPerformance = inputConnectionPerformance;
         Document doc = getDoc(page, portal);
         if (doc == null) {
-            if (this.pageDescription.isParent()) portal.setErrorMainPage(true);
-            portal.setLastError("Ошибка индексации: гавная страница сайта не доступна");
+            if (this.pageDescription.isParent()) {
+                portal.setErrorMainPage(true);
+                portal.setLastError("Ошибка индексации: гавная страница сайта не доступна");
+            }
             return;
         }
         page.setContent(doc.toString());
