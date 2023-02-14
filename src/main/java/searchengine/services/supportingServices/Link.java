@@ -29,6 +29,8 @@ public class Link {
     private static RepositoriesFactory repositories;
     private static ConnectionPerformance connectionPerformance;
     private static final LemmaFinder lemmaInstance;
+    private final String[] badExpansions = {".doc",".jpg",".png",".jpeg",".bmp",
+                                            ".txt",".pdf",".xls",".docx",".gif",".webp"};
 
     static {
         try {
@@ -152,19 +154,15 @@ public class Link {
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
+        boolean expansionCorrect = true;
+        for (String expansion: badExpansions) {
+            if (childrenLink.endsWith(expansion)) {
+                expansionCorrect = false;
+                break;
+            }
+        }
         return hostIsCorrect
-                && !childrenLink.endsWith(".doc")
-                && !childrenLink.endsWith(".jpg")
-                && !childrenLink.endsWith(".png")
-                && !childrenLink.endsWith(".jpeg")
-                && !childrenLink.endsWith(".bmp")
-                && !childrenLink.endsWith(".txt")
-                && !childrenLink.endsWith(".pdf")
-                && !childrenLink.endsWith(".xls")
-                && !childrenLink.endsWith(".docx")
-                && !childrenLink.endsWith(".gif")
-                && !childrenLink.endsWith(".webp")
-                ;
+                && expansionCorrect;
     }
 
     public ArrayList<String> getChildrenLinks() {
