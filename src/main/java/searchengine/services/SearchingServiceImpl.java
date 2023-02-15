@@ -3,7 +3,6 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import searchengine.dto.searching.DetailedSearchingItem;
@@ -11,7 +10,7 @@ import searchengine.model.Page;
 import searchengine.records.PageRelevance;
 import searchengine.records.SearchingSettings;
 import searchengine.repositories.PageRepository;
-import searchengine.services.supportingServices.LemmaFinder;
+import searchengine.services.supportingservices.LemmaFinder;
 import searchengine.dto.searching.SearchingResponse;
 import searchengine.response.SearchRequest;
 
@@ -32,7 +31,6 @@ public class SearchingServiceImpl implements SearchingService{
     private Connection connection;
     private Statement statement;
 
-    @Autowired
     private final PageRepository pageRepository;
 
     private static final LemmaFinder lemmaInstance;
@@ -161,12 +159,6 @@ public class SearchingServiceImpl implements SearchingService{
             sb.append(words[i]);
         }
         return sb.toString();
-    }
-
-    private SearchingResponse errorResponse() {
-        SearchingResponse response = new SearchingResponse();
-        response.setResult(false);
-        return response;
     }
 
     private SearchingResponse errorFoundResponse(String errorText) {

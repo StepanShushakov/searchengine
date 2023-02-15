@@ -1,4 +1,4 @@
-package searchengine.services.supportingServices;
+package searchengine.services.supportingservices;
 
 import com.google.common.util.concurrent.Uninterruptibles;
 import org.jsoup.HttpStatusException;

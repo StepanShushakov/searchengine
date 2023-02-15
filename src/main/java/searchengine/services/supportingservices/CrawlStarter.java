@@ -1,4 +1,4 @@
-package searchengine.services.supportingServices;
+package searchengine.services.supportingservices;
 
 import searchengine.model.Portal;
 
