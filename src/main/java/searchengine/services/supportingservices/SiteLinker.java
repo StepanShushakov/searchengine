@@ -1,6 +1,7 @@
 package searchengine.services.supportingservices;
 
 import lombok.SneakyThrows;
+import searchengine.config.BadExpansionsList;
 import searchengine.model.IndexStatus;
 import searchengine.model.Portal;
 import searchengine.records.ConnectionPerformance;
@@ -21,8 +22,11 @@ public class SiteLinker extends RecursiveAction {
     private static Set<String> verifySet;
     private static boolean indexingStarted = false;
 
+    private static BadExpansionsList badExpansions;
+
     public SiteLinker(String url, Portal portal, boolean isNew) {
         this.pageDescription = new PageDescription(url, portal, isNew);
+        Link.setBadExpansions(badExpansions);
         this.link = new Link(pageDescription,
                                 SiteLinker.repositories,
                                 SiteLinker.connectionPerformance);
@@ -92,5 +96,9 @@ public class SiteLinker extends RecursiveAction {
 
     public static void initVerifySet() {
         SiteLinker.verifySet = ConcurrentHashMap.newKeySet();
+    }
+
+    public static void setBadExpansions(BadExpansionsList badExpansions) {
+        if (SiteLinker.badExpansions == null) SiteLinker.badExpansions = badExpansions;
     }
 }

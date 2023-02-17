@@ -5,6 +5,7 @@ import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import searchengine.config.BadExpansionsList;
 import searchengine.model.IndexEntity;
 import searchengine.model.Lemma;
 import searchengine.model.Page;
@@ -29,8 +30,7 @@ public class Link {
     private static RepositoriesFactory repositories;
     private static ConnectionPerformance connectionPerformance;
     private static final LemmaFinder lemmaInstance;
-    private final String[] badExpansions = {".doc",".jpg",".png",".jpeg",".bmp",
-                                            ".txt",".pdf",".xls",".docx",".gif",".webp"};
+    private static BadExpansionsList badExpansions;
 
     static {
         try {
@@ -155,8 +155,8 @@ public class Link {
             throw new RuntimeException(e);
         }
         boolean expansionCorrect = true;
-        for (String expansion: badExpansions) {
-            if (childrenLink.endsWith(expansion)) {
+        for (String expansion: badExpansions.getEndings()) {
+            if (childrenLink.endsWith("." + expansion)) {
                 expansionCorrect = false;
                 break;
             }
@@ -229,5 +229,9 @@ public class Link {
         URL url = getUrlFromString(string);
         String path = url.getPath();
         return path.isBlank() ? "/" : path;
+    }
+
+    public static void setBadExpansions(BadExpansionsList badExpansions) {
+        if (Link.badExpansions == null) Link.badExpansions = badExpansions;
     }
 }

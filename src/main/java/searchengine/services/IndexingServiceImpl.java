@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import searchengine.config.BadExpansionsList;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.services.supportingservices.CrawlStarter;
@@ -35,6 +36,8 @@ import java.util.concurrent.*;
 public class IndexingServiceImpl implements IndexingService {
 
     private final SitesList sites;
+
+    private final BadExpansionsList badExpansions;
 
     @Autowired
     private final PortalRepository portalRepository;
@@ -69,6 +72,7 @@ public class IndexingServiceImpl implements IndexingService {
                 lemmaRepository,
                 indexRepository));
         SiteLinker.setConnectionPerformance(new ConnectionPerformance(userAgent, referrer));
+        SiteLinker.setBadExpansions(badExpansions);
         for (Site site : sites.getSites()) {
             String portalUrl = site.getUrl();
             Portal portal = portalRepository.findByUrl(portalUrl);
@@ -136,6 +140,7 @@ public class IndexingServiceImpl implements IndexingService {
 
         List<Page> pages = pageRepository.findByPortalAndPath(portal, url.getPath());
 
+        Link.setBadExpansions(badExpansions);
         if (pages.size() == 0) {
             new Link(new PageDescription(url.getProtocol() + "://" + url.getHost() + url.getPath()
                                                         ,portal, url.getHost().equals(portal.getUrl()))
