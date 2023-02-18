@@ -19,8 +19,28 @@ spring:
 
 indexing-settings:
   sites:
-    - url: https://skillbox.ru/
-      name: Skillbox
+    - url: https://www.playback.ru
+      name: PlayBack.Ru
+    - url: https://1cistline.ru/
+      name: Истлайн
+    - url: http://www.cimus.biz
+      name: Цимус
+    - url: http://dgs.ms/
+      name: несуществующий сайт
+    - url: https://strike-ball.ru
+      name: Магазин "Легион"
+    - url: https://dombulgakova.ru/
+      name: Музей-Театр булгаковский дом
+    - url: https://nikoartgallery.com/
+      name: Креативное пространство и галерея Н.Б. Никогосяна
+    - url: https://volochek.life/
+      name: Вышний Волочёк
+    - url: http://radiomv.ru/
+      name: Радио Милицейская волна
+    - url: https://dimonvideo.ru/
+      name: DimonVideo - программы | игры | фильмы | книги
+    - url: https://ipfran.ru/
+      name: ИПФ РАН
 
 incorrect-page-endings:
   endings:
